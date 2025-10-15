@@ -1,4 +1,3 @@
-import backendConnection from "../../api/backendApi";
 import { fetchSpecificStudent } from "../../api/students";
 import MembershipBanner from "./dashboard/Membership";
 import OperationHours from "./dashboard/OperationHours";
@@ -12,8 +11,6 @@ import ads from "../../assets/images/ads.png";
 import {IctMessage} from '../Events.jsx';
 import { AkweMessage } from "../Events.jsx";
 import CircularGallery from '../../components/Image/CircularGallery';
-import BarGraph from "../admin/dashboard/BarGraph";
-import DoughnutChart from '../admin/dashboard/DoughnutChart';
 
 
 const Skeleton = ({ className }) => (
@@ -181,8 +178,6 @@ const StudentDashboard = () => {
     };
     fetchData();
   }, [token]);
-
-  
 
   return (
     <div className="max-w-[1600px] mx-auto grid grid-cols-1 py-5 md:grid-cols-1 lg:grid-cols-7 lg:flex gap-6">
@@ -383,6 +378,7 @@ const EventDetails = ({ events }) => {
             <i className="fas fa-times"></i>
           </button>
         )}
+    
       </div>
     </div>
   );

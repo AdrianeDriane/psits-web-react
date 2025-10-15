@@ -12,12 +12,12 @@ import ForcedInputModal from "../common/modal/ForcedInputModal";
 
 const StudentLayout = () => {
   const location = useLocation();
+  const userData = getInformationData();
   const [label, setLabel] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const userData = getInformationData();
-  const [isYearUpdated, setIsYearUpdated] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isYearUpdated, setIsYearUpdated] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(true);
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const pathParts = location.pathname.split("/");

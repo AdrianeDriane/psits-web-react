@@ -11,3 +11,5 @@ export default function CustomTailSpinner() {
         />
     )
 }
+
+// might wanna add different sizes for this loading spinner
