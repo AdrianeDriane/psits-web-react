@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import CustomTailSpinner from "../CustomTailSpinner";
 
-export default function ForcedInputModal({ isOpen, onSubmit }) {
-  const [yearLevel, setYearLevel] = useState("");
+export default function ForcedInputModal({ studentIdNumber, isOpen, onSubmit, loading }) {
+  const [yearLevel, setYearLevel] = useState(0);
   const [error, setError] = useState("");
 
   const yearLevels = [
@@ -10,18 +11,24 @@ export default function ForcedInputModal({ isOpen, onSubmit }) {
     "3rd Year",
     "4th Year",
     "5th Year",
-    "Irregular"
+    // "Irregular"
   ];
+
+  const yearNumbers = [
+    1, 2, 3, 4, 5
+  ]
 
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    setYearLevel(e.target.value);
+    const value = e.target.value
+    const numValue = Number(value)  // Convert to number
+    setYearLevel(numValue);
     if (error) setError("");
   };
 
   const validateForm = () => {
-    if (!yearLevel.trim()) {
+    if (!yearLevel || yearLevel < 1 || yearLevel > 5) {
       setError("Year level is required");
       return false;
     }
@@ -30,7 +37,7 @@ export default function ForcedInputModal({ isOpen, onSubmit }) {
 
   const handleSubmit = () => {
     if (validateForm()) {
-      onSubmit({ yearLevel });
+      onSubmit(studentIdNumber, yearLevel);
     }
   };
 
@@ -72,9 +79,9 @@ export default function ForcedInputModal({ isOpen, onSubmit }) {
             onChange={handleChange}
             onKeyPress={handleKeyPress}
           >
-            <option value="" className="text-gray-400">Select your year level</option>
+            <option value={0} className="text-gray-400">Select your year level</option>
             {yearLevels.map((year, index) => (
-              <option key={index} value={year} className="text-gray-700">
+              <option key={index} value={yearNumbers[index]} className="text-gray-700">
                 {year}
               </option>
             ))}
@@ -92,9 +99,13 @@ export default function ForcedInputModal({ isOpen, onSubmit }) {
         {/* Submit Button */}
         <button
           onClick={handleSubmit}
-          className="w-full bg-[#08568a] hover:bg-[#074873] text-white py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+          className={`w-full bg-[#08568a] ${loading && 'disabled'}  hover:bg-[#074873] text-white py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer`}
+          disabled={loading}
         >
+          <span className="flex flex-row gap-2 w-full justify-center">
+          {loading && (<CustomTailSpinner />)}{" "}
           Save & Continue
+          </span>
         </button>
       </div>
     </div>

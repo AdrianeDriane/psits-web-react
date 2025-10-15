@@ -1,4 +1,3 @@
-import backendConnection from "../../api/backendApi";
 import { fetchSpecificStudent } from "../../api/students";
 import MembershipBanner from "./dashboard/Membership";
 import OperationHours from "./dashboard/OperationHours";
@@ -12,9 +11,6 @@ import ads from "../../assets/images/ads.png";
 import {IctMessage} from '../Events.jsx';
 import { AkweMessage } from "../Events.jsx";
 import CircularGallery from '../../components/Image/CircularGallery';
-import BarGraph from "../admin/dashboard/BarGraph";
-import DoughnutChart from '../admin/dashboard/DoughnutChart';
-import ForcedInputModal from "../../components/common/modal/ForcedInputModal.jsx";
 
 
 const Skeleton = ({ className }) => (
@@ -30,8 +26,6 @@ const StudentDashboard = () => {
   const currentDate = new Date();
   const end = new Date(currentDate.getFullYear(), 10, 30);
   const token = sessionStorage.getItem("Token");
-  const [isModalOpen, setIsModalOpen] = useState(true);
-  
 
   const fetchAllEvents = async () => {
     const currentDate = new Date();
@@ -86,11 +80,6 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error("Error fetching merchandise:", error);
     }
-  };
-  const handleFormSubmit = (data) => {
-    // console.log(data);
-    setNewUserData(data);
-    setIsModalOpen(false); 
   };
 
  const IntramsMessage = () => {
@@ -190,12 +179,8 @@ const StudentDashboard = () => {
     fetchData();
   }, [token]);
 
-  
-
   return (
     <div className="max-w-[1600px] mx-auto grid grid-cols-1 py-5 md:grid-cols-1 lg:grid-cols-7 lg:flex gap-6">
-      {/* Modal at the root level */}
-      <ForcedInputModal isOpen={isModalOpen} onSubmit={handleFormSubmit} />
       {loading ? (
         <>
           <Skeleton className="h-[280px] md:col-span-2 lg:col-span-3 xl:col-span-2 lg:row-span-2" />
