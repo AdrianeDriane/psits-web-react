@@ -191,6 +191,7 @@ export const searchStudentById = async (id_number) => {
   }
 };
 
+
 export const updateStudentYearLevelForCurrentYear = async (id_number, yearToUpdate) => {
   try {
     const response = await axios.put(
