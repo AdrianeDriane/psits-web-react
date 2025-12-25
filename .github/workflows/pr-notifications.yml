@@ -1,5 +1,11 @@
 name: Discord PR Notifications
 
+# DISABLED: Using webhook middleware instead to handle all PRs (including forks)
+# The webhook middleware (deployed to Vercel) handles notifications for both
+# same-repo PRs and fork PRs, avoiding duplicate notifications.
+#
+# To re-enable this workflow, remove the condition below or set it to 'true'
+
 on:
   pull_request:
     # Trigger for PRs to any branch (scalable for all branches)
@@ -14,7 +20,8 @@ jobs:
   notify-pr-event:
     name: Send Discord Notification
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    # DISABLED: Set to false to disable this workflow (using webhook middleware instead)
+    if: false && github.event_name == 'pull_request'
     permissions:
       contents: read
       pull-requests: write
@@ -456,7 +463,8 @@ jobs:
   notify-pr-review:
     name: Send PR Review Notification
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request_review'
+    # DISABLED: Set to false to disable this workflow (using webhook middleware instead)
+    if: false && github.event_name == 'pull_request_review'
     permissions:
       contents: read
       pull-requests: read
