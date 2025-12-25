@@ -248,10 +248,44 @@ jobs:
             exit 0
           fi
 
-          # Check if Discord webhook URL is available (for fork PRs, secrets are not available)
+          # Check if Discord webhook URL is available
+          # NOTE: For fork PRs, GitHub does NOT provide secrets for security reasons
+          # This is a GitHub security feature and cannot be changed
           if [ -z "$DISCORD_WEBHOOK_URL" ] || [ "$DISCORD_WEBHOOK_URL" = "" ]; then
-            echo "ℹ️ Discord webhook URL not available (likely a fork PR). Skipping Discord notification."
-            echo "PR will still be processed, but Discord notification will be skipped."
+            echo "⚠️ Discord webhook URL not available!"
+            echo ""
+            
+            # Detect if this is a fork PR
+            PR_HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+            PR_BASE_REPO="${{ github.event.pull_request.base.repo.full_name }}"
+            
+            if [ "$PR_HEAD_REPO" != "$PR_BASE_REPO" ]; then
+              echo "🔒 This is a FORK PR (from $PR_HEAD_REPO to $PR_BASE_REPO)"
+              echo ""
+              echo "❌ Secrets are NOT available for fork PRs (GitHub security feature)"
+              echo "   - This is expected behavior and cannot be changed"
+              echo "   - Fork PRs cannot access repository secrets for security reasons"
+              echo "   - The workflow will still run, but Discord notifications will be skipped"
+              echo ""
+              echo "✅ To receive Discord notifications:"
+              echo "   - Merge the fork PR into your repository"
+              echo "   - Or create a branch directly in this repository (not from a fork)"
+            else
+              echo "📋 This is a SAME-REPO PR (from same repository)"
+              echo ""
+              echo "Possible reasons why secret is not available:"
+              echo "1. ❌ Secret 'DISCORD_WEBHOOK_URL' is not set in repository settings"
+              echo "2. ❌ The secret name might be incorrect (must be exactly: DISCORD_WEBHOOK_URL)"
+              echo ""
+              echo "✅ To fix:"
+              echo "1. Go to: Settings → Secrets and variables → Actions"
+              echo "2. Click 'New repository secret'"
+              echo "3. Name: DISCORD_WEBHOOK_URL (exact name, case-sensitive)"
+              echo "4. Value: Paste your Discord webhook URL"
+              echo "5. Get webhook URL from: Discord Server → Server Settings → Integrations → Webhooks → New Webhook"
+            fi
+            echo ""
+            echo "ℹ️ PR will still be processed, but Discord notification will be skipped."
             exit 0
           fi
 
@@ -557,10 +591,43 @@ jobs:
             exit 0
           fi
 
-          # Check if Discord webhook URL is available (for fork PRs, secrets are not available)
+          # Check if Discord webhook URL is available
+          # NOTE: For fork PRs, GitHub does NOT provide secrets for security reasons
           if [ -z "$DISCORD_WEBHOOK_URL" ] || [ "$DISCORD_WEBHOOK_URL" = "" ]; then
-            echo "ℹ️ Discord webhook URL not available (likely a fork PR). Skipping Discord notification."
-            echo "PR review will still be processed, but Discord notification will be skipped."
+            echo "⚠️ Discord webhook URL not available!"
+            echo ""
+            
+            # Detect if this is a fork PR
+            PR_HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+            PR_BASE_REPO="${{ github.event.pull_request.base.repo.full_name }}"
+            
+            if [ "$PR_HEAD_REPO" != "$PR_BASE_REPO" ]; then
+              echo "🔒 This is a FORK PR (from $PR_HEAD_REPO to $PR_BASE_REPO)"
+              echo ""
+              echo "❌ Secrets are NOT available for fork PRs (GitHub security feature)"
+              echo "   - This is expected behavior and cannot be changed"
+              echo "   - Fork PRs cannot access repository secrets for security reasons"
+              echo "   - The workflow will still run, but Discord notifications will be skipped"
+              echo ""
+              echo "✅ To receive Discord notifications:"
+              echo "   - Merge the fork PR into your repository"
+              echo "   - Or create a branch directly in this repository (not from a fork)"
+            else
+              echo "📋 This is a SAME-REPO PR (from same repository)"
+              echo ""
+              echo "Possible reasons why secret is not available:"
+              echo "1. ❌ Secret 'DISCORD_WEBHOOK_URL' is not set in repository settings"
+              echo "2. ❌ The secret name might be incorrect (must be exactly: DISCORD_WEBHOOK_URL)"
+              echo ""
+              echo "✅ To fix:"
+              echo "1. Go to: Settings → Secrets and variables → Actions"
+              echo "2. Click 'New repository secret'"
+              echo "3. Name: DISCORD_WEBHOOK_URL (exact name, case-sensitive)"
+              echo "4. Value: Paste your Discord webhook URL"
+              echo "5. Get webhook URL from: Discord Server → Server Settings → Integrations → Webhooks → New Webhook"
+            fi
+            echo ""
+            echo "ℹ️ PR review will still be processed, but Discord notification will be skipped."
             exit 0
           fi
           
