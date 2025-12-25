@@ -13,14 +13,17 @@ GitHub Actions secrets are **not available for fork PRs** (security feature). Th
 ### Option 1: Deploy to Vercel (Recommended - Free)
 
 1. **Deploy the middleware:**
-   ```bash
-   cd .github/webhook-middleware
-   vercel deploy
-   ```
+   - Go to [Vercel Dashboard](https://vercel.com)
+   - Click "Add New Project"
+   - Import your GitHub repository
+   - **Root Directory:** Select `webhook-middleware`
+   - Framework Preset: "Other"
+   - Deploy
 
 2. **Set environment variable in Vercel:**
    - Go to Vercel dashboard → Your project → Settings → Environment Variables
    - Add: `DISCORD_WEBHOOK_URL` = your Discord webhook URL
+   - Redeploy
 
 3. **Set up GitHub Webhook:**
    - Go to: GitHub Repo → Settings → Webhooks → Add webhook
@@ -33,7 +36,7 @@ GitHub Actions secrets are **not available for fork PRs** (security feature). Th
 
 1. **Deploy the middleware:**
    ```bash
-   cd .github/webhook-middleware
+   cd webhook-middleware
    netlify deploy --prod
    ```
 
@@ -66,4 +69,3 @@ The middleware:
 - Discord webhook URL is stored in middleware's environment variables (not in GitHub)
 - Only the middleware endpoint is public (GitHub webhook URL)
 - No secrets exposed to fork PRs
-
