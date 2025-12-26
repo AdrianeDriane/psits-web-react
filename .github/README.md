@@ -1,7 +1,15 @@
-test commit 
+# PSITS | University of Cebu - Main Campus
 
-test commit for webhook
+Website link: https://psits-web.vercel.app
 
-123123 
+Facebook page: https://www.facebook.com/PSITS.UCmain
 
-FIX 4   
+<img src=".github/docs/ss-psits-1.png"/>
+
+# Build Pipelines
+
+[![PSITS Client](https://github.com/PSITS-UC-MAIN/PSITS-WEB-REACT/actions/workflows/client-side-pipeline.yml/badge.svg)](https://github.com/PSITS-UC-MAIN/PSITS-WEB-REACT/actions/workflows/client-side-pipeline.yml)
+
+[![PSITS Server](https://github.com/PSITS-UC-MAIN/PSITS-WEB-REACT/actions/workflows/server-side-pipeline.yml/badge.svg)](https://github.com/PSITS-UC-MAIN/PSITS-WEB-REACT/actions/workflows/server-side-pipeline.yml)
+
+
