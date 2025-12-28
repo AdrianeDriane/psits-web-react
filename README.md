@@ -5,7 +5,7 @@ A comprehensive web platform for the Philippine Society of Information Technolog
 **Website:** https://psits.vercel.app  
 **Facebook:** https://www.facebook.com/PSITS.UCmain
 
-<img src="/docs/ss-psits-1.png"/>
+<img src=".github/docs/ss-psits-1.png"/>
 
 ## 🛠️ Tech Stack
 
