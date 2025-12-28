@@ -14,24 +14,6 @@ Thank you for your interest in contributing! While this repository is publicly v
 
 We use a simple workflow: **master + staging + feature branches**.
 
-```mermaid
-flowchart TD
-    A[Fork Repository] --> B[Create Branch from staging]
-    B --> C[Implement Changes]
-    C --> D[Open PR to staging]
-    D --> E{QA Testing}
-    E -->|Pass| F[Merge to staging]
-    E -->|Fail| C
-    F --> G{Final Approval}
-    G -->|Approved| H[Merge staging to master]
-    G -->|Changes Needed| C
-    
-    style A fill:#e3f2fd
-    style D fill:#fff3e0
-    style E fill:#fce4ec
-    style H fill:#e8f5e9
-```
-
 **Workflow Steps:**
 
 1. **Fork** the repository to your personal GitHub account.
@@ -40,6 +22,28 @@ flowchart TD
 4. **Open a Pull Request (PR) targeting `staging`** in the original repository.
 5. **QA tests** features in the staging environment.
 6. If approved, changes are **merged from `staging` to `master`**.
+
+```mermaid
+flowchart LR
+    A[Fork Repository] --> B[Create Branch<br/>from staging]
+    B --> C[Implement<br/>Changes]
+    C --> D[Open PR<br/>to staging]
+    D --> E{QA Testing}
+    E -->|Pass| F[Merge to<br/>staging]
+    E -->|Fail| C
+    F --> G{Final<br/>Approval}
+    G -->|Approved| H[Merge staging<br/>to master]
+    G -->|Changes Needed| C
+    
+    style A fill:#2196F3,stroke:#1976D2,stroke-width:2px,color:#fff
+    style B fill:#4CAF50,stroke:#388E3C,stroke-width:2px,color:#fff
+    style C fill:#FF9800,stroke:#F57C00,stroke-width:2px,color:#fff
+    style D fill:#9C27B0,stroke:#7B1FA2,stroke-width:2px,color:#fff
+    style E fill:#F44336,stroke:#D32F2F,stroke-width:2px,color:#fff
+    style F fill:#00BCD4,stroke:#0097A7,stroke-width:2px,color:#fff
+    style G fill:#E91E63,stroke:#C2185B,stroke-width:2px,color:#fff
+    style H fill:#4CAF50,stroke:#388E3C,stroke-width:3px,color:#fff
+```
 
 ### 🏷️ Branch Naming
 
