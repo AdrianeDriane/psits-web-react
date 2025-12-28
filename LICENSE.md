@@ -1,7 +1,7 @@
 # PSITS License (Custom Proprietary License) Internal Use Only | Public View Permitted
 
 **Project:** PSITS | University of Cebu - Main Campus  
-**Copyright (c) 2025 psits. All rights reserved.**
+**Copyright (c) 2025 PSITS. All rights reserved.**
 
 ## Summary
 
