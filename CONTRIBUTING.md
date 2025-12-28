@@ -14,6 +14,26 @@ Thank you for your interest in contributing! While this repository is publicly v
 
 We use a simple workflow: **master + staging + feature branches**.
 
+```mermaid
+flowchart TD
+    A[Fork Repository] --> B[Create Branch from staging]
+    B --> C[Implement Changes]
+    C --> D[Open PR to staging]
+    D --> E{QA Testing}
+    E -->|Pass| F[Merge to staging]
+    E -->|Fail| C
+    F --> G{Final Approval}
+    G -->|Approved| H[Merge staging to master]
+    G -->|Changes Needed| C
+    
+    style A fill:#e3f2fd
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+    style H fill:#e8f5e9
+```
+
+**Workflow Steps:**
+
 1. **Fork** the repository to your personal GitHub account.
 2. In your fork, **create a new branch from `staging`**.
 3. Implement your changes on that branch.
