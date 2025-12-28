@@ -1,10 +1,10 @@
-# Code of Conduct
+# 📜 Code of Conduct
 
 **PSITS | University of Cebu - Main Campus**
 
 ---
 
-## Our Commitment
+## 💙 Our Commitment
 
 We are committed to fostering an open, welcoming, and inclusive community for all students, developers, contributors, administrators, and users of the PSITS platform. We value collaboration, respect, honesty, integrity, and professionalism in all our interactions.
 
@@ -16,7 +16,7 @@ Our community is guided by the values of the University of Cebu and the College 
 - **Honesty & Integrity** - We conduct ourselves with truthfulness and moral uprightness
 - **Professionalism** - We maintain high standards in all communications and conduct
 
-## Expected Behavior
+## ✅ Expected Behavior
 
 We encourage all community members to:
 
@@ -28,7 +28,7 @@ We encourage all community members to:
 - **Respect Privacy & Security** - This platform handles sensitive student data including personal information, payment details, and attendance records. Always prioritize user privacy, data security, and confidentiality. Follow all security protocols and best practices.
 - **Maintain Confidentiality** - Respect organizational information, project details, and any confidential data. Do not share sensitive information without proper authorization.
 
-## Unacceptable Behavior
+## ❌ Unacceptable Behavior
 
 The following behaviors are not tolerated:
 
@@ -43,7 +43,7 @@ The following behaviors are not tolerated:
 - Unprofessional conduct that undermines community values
 - Any conduct that could reasonably be considered inappropriate in a professional educational setting
 
-## Our Responsibilities
+## 🧭 Our Responsibilities
 
 Community leaders, maintainers, and administrators are responsible for:
 
@@ -53,7 +53,7 @@ Community leaders, maintainers, and administrators are responsible for:
 - Protecting the confidentiality of reporters when handling violations
 - Maintaining the security and integrity of the platform
 
-## Scope
+## 🌐 Scope
 
 This Code of Conduct applies to:
 
@@ -62,7 +62,7 @@ This Code of Conduct applies to:
 - All users of the PSITS platform
 - All project spaces including GitHub repositories, code contributions, and communications channels
 
-## Enforcement & Consequences
+## ⚖️ Enforcement & Consequences
 
 Violations of this Code of Conduct will be reviewed and addressed appropriately. Depending on the severity and nature of the violation, consequences may include:
 
@@ -84,7 +84,7 @@ Violations of this Code of Conduct will be reviewed and addressed appropriately.
 - Escalation to university authorities if applicable
 - Legal action if proprietary information or student data is compromised
 
-## Reporting Violations
+## 📨 Reporting Violations
 
 If you experience or witness unacceptable behavior, violations, security breaches, or policy violations, please report immediately to:
 
@@ -103,7 +103,7 @@ All reports will be reviewed and investigated promptly and confidentially. We ar
 
 ---
 
-## Important Reminders
+## 📌 Important Reminders
 
 - **Student Data is Sacred** - We handle sensitive information about our fellow students. Privacy and security are non-negotiable.
 - **We're Building Together** - We're creating technology to enhance the student experience. Let's maintain the highest standards of respect and professionalism.
