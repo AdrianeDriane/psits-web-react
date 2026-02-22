@@ -1,0 +1,22 @@
+import { useAuth } from "@/features/auth";
+import type { Campus } from "@/features/auth/types/auth.types";
+
+/**
+ * A hook to check if the current user belongs to one of the specified campuses.
+ *
+ * @param allowedCampuses An array of campuses that are allowed.
+ * @param requiredRole The role required to check against. Defaults to "Admin".
+ * @returns `true` if the user has the required role and their campus is in the list, otherwise `false`.
+ */
+export function useCampusCheck(
+  allowedCampuses: Campus[],
+  requiredRole: "Admin" | "Student" = "Admin"
+): boolean {
+  const { user } = useAuth();
+
+  if (!user || user.role !== requiredRole || !user.campus) {
+    return false;
+  }
+
+  return allowedCampuses.includes(user.campus);
+}

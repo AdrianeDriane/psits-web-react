@@ -1,9 +1,11 @@
+export type Campus = "UC-Main" | "UC-Banilad" | "UC-LM" | "UC-PT" | "UC-CS";
+
 /** User object returned by the backend on login/refresh. */
 export type User = {
   id: string;
   idNumber: string;
   role: "Admin" | "Student";
-  campus: string;
+  campus: Campus;
   name?: string;
   email?: string;
   course?: string;
