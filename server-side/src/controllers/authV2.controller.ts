@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import { Student } from "../models/student.model";
 import { IStudentDocument } from "../models/student.interface";
@@ -12,6 +12,7 @@ import {
 } from "../util/cookie.util";
 import { verifyRefreshToken } from "../util/jwt.util";
 import { Log } from "../models/log.model";
+import { AuthError, AuthErrorCodes } from "../util/errors.util";
 
 /**
  * Shared user response type for frontend
@@ -44,7 +45,9 @@ const toUserResponse = (
       idNumber: student.id_number,
       role: "Student",
       campus: student.campus,
-      name: `${student.first_name} ${student.middle_name || ""} ${student.last_name}`.trim(),
+      name: `${student.first_name} ${student.middle_name || ""} ${
+        student.last_name
+      }`.trim(),
       email: student.email,
       course: student.course,
       year: student.year,
@@ -71,7 +74,11 @@ const toUserResponse = (
  * POST /v2/auth/login
  * Validates credentials, issues access + refresh tokens, sets refresh cookie.
  */
-export const loginV2Controller = async (req: Request, res: Response) => {
+export const loginV2Controller = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { id_number, password } = req.body;
 
   try {
@@ -82,25 +89,20 @@ export const loginV2Controller = async (req: Request, res: Response) => {
     if (id_number.includes("-admin")) {
       const admin = await Admin.findOne({ id_number });
       if (!admin) {
-        return res.status(400).json({ message: "Invalid credentials" });
+        throw new AuthError(AuthErrorCodes.InvalidCredentials);
       }
 
       const passwordMatch = await bcrypt.compare(password, admin.password);
-
       if (!passwordMatch) {
-        return res
-          .status(400)
-          .json({ message: "Invalid ID number or password" });
+        throw new AuthError(AuthErrorCodes.InvalidCredentials);
       }
 
       if (admin.status === "Suspend") {
-        return res.status(403).json({
-          message: "Your account has been suspended! Please contact president",
-        });
+        throw new AuthError(AuthErrorCodes.AccountSuspended);
       }
 
       if (admin.status !== "Active") {
-        return res.status(403).json({ message: "Account is not active" });
+        throw new AuthError(AuthErrorCodes.AccountNotActive);
       }
 
       user = admin;
@@ -117,25 +119,20 @@ export const loginV2Controller = async (req: Request, res: Response) => {
       // Student login
       const student = await Student.findOne({ id_number });
       if (!student) {
-        return res.status(400).json({ message: "Invalid credentials" });
+        throw new AuthError(AuthErrorCodes.InvalidCredentials);
       }
 
       const passwordMatch = await bcrypt.compare(password, student.password);
-
       if (!passwordMatch) {
-        return res
-          .status(400)
-          .json({ message: "Invalid ID number or password" });
+        throw new AuthError(AuthErrorCodes.InvalidCredentials);
       }
 
       if (student.status === "False") {
-        return res
-          .status(403)
-          .json({ message: "Your account has been deleted!" });
+        throw new AuthError(AuthErrorCodes.AccountDeleted);
       }
 
       if (student.status !== "True") {
-        return res.status(403).json({ message: "Account is not active" });
+        throw new AuthError(AuthErrorCodes.AccountNotActive);
       }
 
       user = student;
@@ -178,8 +175,7 @@ export const loginV2Controller = async (req: Request, res: Response) => {
       user: toUserResponse(user, role),
     });
   } catch (error) {
-    console.error("Login error:", error);
-    return res.status(500).json({ message: "An error occurred during login" });
+    next(error);
   }
 };
 
@@ -188,12 +184,16 @@ export const loginV2Controller = async (req: Request, res: Response) => {
  * Reads refresh token from cookie, verifies it, checks for reuse (theft detection), issues new tokens.
  * Implements refresh token rotation: old token is invalidated upon successful refresh.
  */
-export const refreshV2Controller = async (req: Request, res: Response) => {
+export const refreshV2Controller = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const refreshToken = getRefreshTokenFromCookie(req.headers.cookie);
 
     if (!refreshToken) {
-      return res.status(401).json({ message: "Refresh token not found" });
+      throw new AuthError(AuthErrorCodes.TokenNotFound);
     }
 
     // Verify refresh token signature
@@ -201,9 +201,7 @@ export const refreshV2Controller = async (req: Request, res: Response) => {
     try {
       claims = verifyRefreshToken(refreshToken);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Invalid refresh token";
-      return res.status(401).json({ message });
+      throw new AuthError(AuthErrorCodes.InvalidToken);
     }
 
     // Fetch user from DB to check if token matches stored currentRefreshToken
@@ -212,20 +210,25 @@ export const refreshV2Controller = async (req: Request, res: Response) => {
 
     if (role === "Admin") {
       user = await Admin.findById(claims.sub);
-      if (!user || user.status !== "Active") {
-        clearRefreshCookie(res);
-        return res.status(403).json({ message: "Account no longer active" });
-      }
     } else {
       user = await Student.findById(claims.sub);
-      if (!user || user.status !== "True") {
-        clearRefreshCookie(res);
-        return res.status(403).json({ message: "Account no longer active" });
-      }
+    }
+
+    // Explicitly check if user exists first.
+    if (!user) {
+      clearRefreshCookie(res);
+      throw new AuthError(AuthErrorCodes.AccountNoLongerActive);
+    }
+
+    const isAccountActive =
+      role === "Admin" ? user.status === "Active" : user.status === "True";
+
+    if (!isAccountActive) {
+      clearRefreshCookie(res);
+      throw new AuthError(AuthErrorCodes.AccountNoLongerActive);
     }
 
     // CRITICAL: Verify refresh token matches the stored token (rotation check)
-    // If tokens don't match, this indicates a reuse attempt (possible theft)
     if (user.currentRefreshToken !== refreshToken) {
       // Invalidate all sessions for this user by setting currentRefreshToken to null
       if (role === "Admin") {
@@ -242,17 +245,8 @@ export const refreshV2Controller = async (req: Request, res: Response) => {
       console.warn(
         `Refresh token reuse detected for user ${claims.idNumber} (${role}). All sessions invalidated.`
       );
-      return res.status(401).json({
-        message:
-          "Refresh token has been invalidated. Please log in again. Suspected token theft.",
-      });
+      throw new AuthError(AuthErrorCodes.TokenInvalidated);
     }
-
-    // TODO (auth): validate pwdChangedAt if we implement password change tracking
-    // if (claims.pwdChangedAt && user.passwordChangedAt > claims.pwdChangedAt) {
-    //   clearRefreshCookie(res);
-    //   return res.status(401).json({ message: "Password has been changed" });
-    // }
 
     // Generate new tokens (rotation)
     const newAccessToken = signAccessToken({
@@ -289,10 +283,7 @@ export const refreshV2Controller = async (req: Request, res: Response) => {
       user: toUserResponse(user, role),
     });
   } catch (error) {
-    console.error("Refresh error:", error);
-    return res
-      .status(500)
-      .json({ message: "An error occurred during token refresh" });
+    next(error);
   }
 };
 
@@ -301,7 +292,11 @@ export const refreshV2Controller = async (req: Request, res: Response) => {
  * Clears refresh token cookie and invalidates stored token in database.
  * This ensures the token can never be reused, even if it's stolen.
  */
-export const logoutV2Controller = async (req: Request, res: Response) => {
+export const logoutV2Controller = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const refreshToken = getRefreshTokenFromCookie(req.headers.cookie);
 
@@ -328,7 +323,6 @@ export const logoutV2Controller = async (req: Request, res: Response) => {
     clearRefreshCookie(res);
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
-    console.error("Logout error:", error);
-    return res.status(500).json({ message: "An error occurred during logout" });
+    next(error);
   }
 };
