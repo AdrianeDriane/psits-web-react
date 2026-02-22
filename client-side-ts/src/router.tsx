@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet } from "react-router";
+import { createBrowserRouter, Outlet } from "react-router-dom";
 import { MainLayout } from "./layouts/MainLayout";
 import { AdminLayout } from "./layouts/AdminLayout";
 import { Home } from "./pages/home";
@@ -11,7 +11,7 @@ import { Cart } from "./pages/orders/components/Cart";
 import OTPCode from "./pages/auth/OtpCode";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { TermsOfCondition } from "./pages/TermsOfCondition";
-import Dashboard  from "./pages/admin/Dashboard";
+import Dashboard from "./pages/admin/Dashboard";
 import EventManagement from "./pages/admin/EventManagement";
 import { ErrorPage } from "./pages/ErrorPage";
 import Login from "./pages/auth/Login";
@@ -23,8 +23,14 @@ import EventAttendance from "./pages/student/EventAttendance";
 import MyOrders from "./pages/student/MyOrders";
 import StudentLayout from "./layouts/StudentLayout";
 import { AdminRouteGuard } from "./components/common/RouteGuards";
+import { AdminCampusRouteGuard } from "./components/common/AdminCampusRouteGuard";
+import { StudentCampusRouteGuard } from "./components/common/StudentCampusRouteGuard";
+import { MainCampusFinancePage } from "./pages/admin/MainCampusFinancePage";
+import GeneralStudentPage from "./pages/student/GeneralStudentPage";
+import GeneralAdminPage from "./pages/admin/GeneralAdminPage";
+import MainCampusStudentPage from "./pages/student/MainCampusStudentPage";
 
-export default createBrowserRouter([
+const router = createBrowserRouter([
   {
     path: "/",
     Component: Outlet,
@@ -49,6 +55,18 @@ export default createBrowserRouter([
               { path: "event-attendance", Component: EventAttendance },
               { path: "my-orders", Component: MyOrders },
               { path: "account-settings", Component: AccountSettings },
+              // TODO: Remove this sample
+              // Example of a general student page with campus-specific component
+              { path: "general", Component: GeneralStudentPage },
+              // TODO: Remove this sample
+              // Example of a campus-specific student route
+              {
+                path: "main-campus",
+                element: (
+                  <StudentCampusRouteGuard allowedCampuses={["UC-Main"]} />
+                ),
+                children: [{ index: true, Component: MainCampusStudentPage }],
+              },
             ],
           },
         ],
@@ -78,10 +96,22 @@ export default createBrowserRouter([
               { index: true, Component: Dashboard },
               { path: "events", Component: EventManagement },
               { path: "events/:eventId", Component: EventManagement },
+              // TODO: Remove this sample
+              // Example of a general admin page with campus-specific component
+              { path: "general", Component: GeneralAdminPage },
             ],
+          },
+          // TODO: Remove this sample
+          // Example of a campus-specific route
+          {
+            path: "finances",
+            element: <AdminCampusRouteGuard allowedCampuses={["UC-Main"]} />,
+            children: [{ index: true, Component: MainCampusFinancePage }],
           },
         ],
       },
     ],
   },
 ]);
+
+export default router;
