@@ -20,6 +20,7 @@ import promoRoutes from "./routes/promo.route";
 import authV2Routes from "./routes/authV2.route";
 import { checkPromos } from "./custom_function/check_promo";
 import documentationRoutes from "./routes/documentation.route";
+import { errorHandler } from "./util/errors.util";
 
 //Declaration
 const app: Express = express();
@@ -64,6 +65,8 @@ app.use("/api/promo", promoRoutes);
 app.use("/api", privateRoutes);
 app.use("/api/docs", documentationRoutes);
 app.use("/api/v2/auth", authV2Routes);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server started, listening at port ${PORT}`);

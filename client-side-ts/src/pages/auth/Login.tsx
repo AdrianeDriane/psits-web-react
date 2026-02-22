@@ -35,11 +35,10 @@ export default function Login() {
         navigate("/");
       }
     } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       const message =
-        error instanceof Error
-          ? error.message
-          : (error as { response?: { data?: { message?: string } } })?.response
-              ?.data?.message || "Login failed. Please try again.";
+        err.response?.data?.message ||
+        "Login failed. Please check your credentials and try again.";
       showToast("error", message);
     } finally {
       setIsSubmitting(false);
