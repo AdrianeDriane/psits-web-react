@@ -19,8 +19,9 @@ import {
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/features/auth";
-import { useNavigate } from "react-router-dom";
+import { useCampusCheck } from "@/features/auth/hooks/useCampusCheck";
 import { showToast } from "@/utils/alertHelper";
+import { useNavigate } from "react-router-dom";
 
 interface AdminSidebarProps {
   userName?: string;
@@ -39,6 +40,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isUcMainAdmin = useCampusCheck(["UC-Main"]);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -136,11 +138,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
                       asChild
                     >
-                      <a href="#">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
+                      >
                         <Grid className="h-5 w-5 shrink-0" />
                         {!collapsed && <span>Dashboard</span>}
                       </a>
@@ -160,11 +172,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
                       asChild
                     >
-                      <a href="#">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
+                      >
                         <svg
                           className="h-5 w-5 shrink-0"
                           fill="none"
@@ -196,11 +218,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
                       asChild
                     >
-                      <a href="#">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
+                      >
                         <svg
                           className="h-5 w-5 shrink-0"
                           fill="none"
@@ -268,8 +300,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
+                      onClick={(e) => {
+                        if (!isUcMainAdmin) {
+                          e.preventDefault();
+                          showToast("error", "Unauthorized.");
+                        }
+                      }}
                     >
                       <svg
                         className="h-5 w-5 shrink-0"
@@ -316,11 +356,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
                       asChild
                     >
-                      <a href="#">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
+                      >
                         <svg
                           className="h-5 w-5 shrink-0"
                           fill="none"
@@ -352,11 +402,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
                       asChild
                     >
-                      <a href="#">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
+                      >
                         <BarChart3 className="h-5 w-5 shrink-0" />
                         {!collapsed && <span>Reports</span>}
                       </a>
@@ -386,11 +446,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
                       asChild
                     >
-                      <a href="#">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
+                      >
                         <svg
                           className="h-5 w-5 shrink-0"
                           fill="none"
@@ -428,8 +498,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
+                      onClick={(e) => {
+                        if (!isUcMainAdmin) {
+                          e.preventDefault();
+                          showToast("error", "Unauthorized.");
+                        }
+                      }}
                     >
                       <svg
                         className="h-5 w-5 shrink-0"
@@ -476,11 +554,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       variant="ghost"
                       className={cn(
                         "w-full",
-                        collapsed ? "justify-center px-2" : "justify-start"
+                        collapsed ? "justify-center px-2" : "justify-start",
+                        !isUcMainAdmin &&
+                          "cursor-not-allowed text-gray-400 opacity-50"
                       )}
                       asChild
                     >
-                      <a href="#">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
+                      >
                         <svg
                           className="h-5 w-5 shrink-0"
                           fill="none"
