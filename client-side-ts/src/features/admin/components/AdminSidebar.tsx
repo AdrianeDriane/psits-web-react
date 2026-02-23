@@ -21,7 +21,7 @@ import logo from "@/assets/logo.png";
 import { useAuth } from "@/features/auth";
 import { useCampusCheck } from "@/features/auth/hooks/useCampusCheck";
 import { showToast } from "@/utils/alertHelper";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 interface AdminSidebarProps {
   userName?: string;
@@ -144,8 +144,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                       asChild
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
                         onClick={(e) => {
                           if (!isUcMainAdmin) {
                             e.preventDefault();
@@ -155,7 +155,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       >
                         <Grid className="h-5 w-5 shrink-0" />
                         {!collapsed && <span>Dashboard</span>}
-                      </a>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -178,8 +178,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                       asChild
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
                         onClick={(e) => {
                           if (!isUcMainAdmin) {
                             e.preventDefault();
@@ -201,7 +201,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                           />
                         </svg>
                         {!collapsed && <span>Organization</span>}
-                      </a>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -224,8 +224,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                       asChild
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
                         onClick={(e) => {
                           if (!isUcMainAdmin) {
                             e.preventDefault();
@@ -247,7 +247,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                           />
                         </svg>
                         {!collapsed && <span>Students</span>}
-                      </a>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -268,12 +268,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                       asChild
                     >
-                      <a href="#">
+                      <Link to="/admin/events">
                         <Calendar className="h-5 w-5 shrink-0" />
                         {!collapsed && (
                           <span className="font-medium">Events</span>
                         )}
-                      </a>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -304,30 +304,19 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         !isUcMainAdmin &&
                           "cursor-not-allowed text-gray-400 opacity-50"
                       )}
-                      onClick={(e) => {
-                        if (!isUcMainAdmin) {
-                          e.preventDefault();
-                          showToast("error", "Unauthorized.");
-                        }
-                      }}
+                      asChild
                     >
-                      <svg
-                        className="h-5 w-5 shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                        />
-                      </svg>
-                      {!collapsed && <span>Merchandise</span>}
-                      {!collapsed && (
                         <svg
-                          className="ml-auto h-4 w-4"
+                          className="h-5 w-5 shrink-0"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -336,10 +325,26 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
+                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                           />
                         </svg>
-                      )}
+                        {!collapsed && <span>Merchandise</span>}
+                        {!collapsed && (
+                          <svg
+                            className="ml-auto h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        )}
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -362,8 +367,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                       asChild
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
                         onClick={(e) => {
                           if (!isUcMainAdmin) {
                             e.preventDefault();
@@ -385,7 +390,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                           />
                         </svg>
                         {!collapsed && <span>Orders</span>}
-                      </a>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -408,8 +413,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                       asChild
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
                         onClick={(e) => {
                           if (!isUcMainAdmin) {
                             e.preventDefault();
@@ -419,7 +424,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       >
                         <BarChart3 className="h-5 w-5 shrink-0" />
                         {!collapsed && <span>Reports</span>}
-                      </a>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -452,8 +457,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                       asChild
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
                         onClick={(e) => {
                           if (!isUcMainAdmin) {
                             e.preventDefault();
@@ -481,7 +486,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                           />
                         </svg>
                         {!collapsed && <span>Settings</span>}
-                      </a>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -502,30 +507,19 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         !isUcMainAdmin &&
                           "cursor-not-allowed text-gray-400 opacity-50"
                       )}
-                      onClick={(e) => {
-                        if (!isUcMainAdmin) {
-                          e.preventDefault();
-                          showToast("error", "Unauthorized.");
-                        }
-                      }}
+                      asChild
                     >
-                      <svg
-                        className="h-5 w-5 shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
+                        onClick={(e) => {
+                          if (!isUcMainAdmin) {
+                            e.preventDefault();
+                            showToast("error", "Unauthorized.");
+                          }
+                        }}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                        />
-                      </svg>
-                      {!collapsed && <span>Documentation</span>}
-                      {!collapsed && (
                         <svg
-                          className="ml-auto h-4 w-4"
+                          className="h-5 w-5 shrink-0"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -534,10 +528,26 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                           />
                         </svg>
-                      )}
+                        {!collapsed && <span>Documentation</span>}
+                        {!collapsed && (
+                          <svg
+                            className="ml-auto h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        )}
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
@@ -560,8 +570,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                       asChild
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to={isUcMainAdmin ? "/admin/under-construction" : "#"}
                         onClick={(e) => {
                           if (!isUcMainAdmin) {
                             e.preventDefault();
@@ -583,7 +593,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                           />
                         </svg>
                         {!collapsed && <span>Logs</span>}
-                      </a>
+                      </Link>
                     </Button>
                   </TooltipTrigger>
                   {collapsed && (
