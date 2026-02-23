@@ -11,7 +11,6 @@ import { Cart } from "./pages/orders/components/Cart";
 import OTPCode from "./pages/auth/OtpCode";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { TermsOfCondition } from "./pages/TermsOfCondition";
-import Dashboard from "./pages/admin/Dashboard";
 import EventManagement from "./pages/admin/EventManagement";
 import { ErrorPage } from "./pages/ErrorPage";
 import { UnderConstruction } from "./pages/UnderConstruction";
@@ -30,6 +29,7 @@ import { MainCampusFinancePage } from "./pages/admin/MainCampusFinancePage";
 import GeneralStudentPage from "./pages/student/GeneralStudentPage";
 import GeneralAdminPage from "./pages/admin/GeneralAdminPage";
 import MainCampusStudentPage from "./pages/student/MainCampusStudentPage";
+import EventsPage from "./pages/admin/EventsPage";
 
 const router = createBrowserRouter([
   {
@@ -98,8 +98,8 @@ const router = createBrowserRouter([
           {
             Component: AdminLayout,
             children: [
-              { index: true, Component: Dashboard },
-              { path: "events", Component: EventManagement },
+              // { path: "dashboard", Component: Dashboard },
+              { path: "events", Component: EventsPage },
               { path: "events/:eventId", Component: EventManagement },
               // TODO: Remove this sample
               // Example of a general admin page with campus-specific component

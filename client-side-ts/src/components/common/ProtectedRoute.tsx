@@ -44,13 +44,9 @@ export default function ProtectedRoute({
     return <Navigate to="/" replace />;
   }
 
-  if (
-    allowedCampuses &&
-    user &&
-    !allowedCampuses.includes(user.campus)
-  ) {
+  if (allowedCampuses && user && !allowedCampuses.includes(user.campus)) {
     // User's campus is not allowed, send to a safe dashboard based on role
-    const fallback = user.role === "Admin" ? "/admin" : "/";
+    const fallback = user.role === "Admin" ? "/admin/events" : "/";
     return <Navigate to={fallback} replace />;
   }
 
