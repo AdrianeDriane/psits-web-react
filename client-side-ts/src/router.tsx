@@ -14,6 +14,7 @@ import { TermsOfCondition } from "./pages/TermsOfCondition";
 import Dashboard from "./pages/admin/Dashboard";
 import EventManagement from "./pages/admin/EventManagement";
 import { ErrorPage } from "./pages/ErrorPage";
+import { UnderConstruction } from "./pages/UnderConstruction";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/SignUp";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -90,6 +91,10 @@ const router = createBrowserRouter([
         path: "admin",
         Component: AdminRouteGuard,
         children: [
+          {
+            path: "under-construction",
+            Component: UnderConstruction,
+          },
           {
             Component: AdminLayout,
             children: [
