@@ -52,6 +52,10 @@ interface EventApiResponse {
   data: Event[];
 }
 
+interface EventByIdApiResponse {
+  data: Event;
+}
+
 export const getEvents = async (): Promise<Event[] | false> => {
   try {
     const response = await api.get<EventApiResponse>(
@@ -63,6 +67,22 @@ export const getEvents = async (): Promise<Event[] | false> => {
     return Array.isArray(eventsArray) ? eventsArray : [];
   } catch (error) {
     return handleApiError(error, true);
+  }
+};
+
+export const getEventById = async (eventId: string): Promise<Event | false> => {
+  try {
+    if (!eventId?.trim()) {
+      return false;
+    }
+
+    const response = await api.get<EventByIdApiResponse>(
+      `/api/v2/events/${eventId}`
+    );
+
+    return response.data.data;
+  } catch (error) {
+    return handleApiError(error);
   }
 };
 
