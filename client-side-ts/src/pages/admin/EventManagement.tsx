@@ -1,6 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, Calendar, MapPin, Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Settings,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -195,11 +208,16 @@ const EventManagement: React.FC = () => {
   const [isAttendeeSettingsOpen, setIsAttendeeSettingsOpen] = useState(false);
   const [isEditEventOpen, setIsEditEventOpen] = useState(false);
 
+  // Tab scroll state
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   const isAdmin = user?.role === "Admin";
   const isUcMainAdmin = isAdmin && user?.campus === "UC-Main";
 
   const availableCampusCodes = useMemo(() => {
-    const eventCampusCodes = DEFAULT_CAMPUSES;
+    const eventCampusCodes = eventDetails?.campusCodes ?? DEFAULT_CAMPUSES;
 
     if (!isAdmin || isUcMainAdmin) {
       return eventCampusCodes;
@@ -226,6 +244,54 @@ const EventManagement: React.FC = () => {
       setActiveCampus(campusCode as Campus);
     }
   };
+
+  // Check if scroll arrows should be visible
+  const updateScrollArrows = useCallback(() => {
+    const container = tabsScrollRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setCanScrollLeft(scrollLeft > 1);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+  }, []);
+
+  // Scroll the tabs container
+  const scrollTabs = useCallback(
+    (direction: "left" | "right") => {
+      const container = tabsScrollRef.current;
+      if (!container) return;
+
+      const scrollAmount = 250;
+      container.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+
+      // Update arrows after scroll animation
+      setTimeout(updateScrollArrows, 350);
+    },
+    [updateScrollArrows]
+  );
+
+  // Observe container resize and update arrows
+  useEffect(() => {
+    const container = tabsScrollRef.current;
+    if (!container) return;
+
+    updateScrollArrows();
+
+    container.addEventListener("scroll", updateScrollArrows, { passive: true });
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateScrollArrows();
+    });
+    resizeObserver.observe(container);
+
+    return () => {
+      container.removeEventListener("scroll", updateScrollArrows);
+      resizeObserver.disconnect();
+    };
+  }, [updateScrollArrows, availableCampusCodes]);
 
   useEffect(() => {
     if (!hasValidRouteEventId) {
@@ -271,20 +337,6 @@ const EventManagement: React.FC = () => {
     showToast("error", UNDER_CONSTRUCTION_MESSAGE);
   };
 
-  // const handleSaveEvent = async (updatedEvent: any) => {
-  //   const eventData = {
-  //     eventName: updatedEvent.title,
-  //     eventDescription: updatedEvent.description,
-  //     eventDate: updatedEvent.startDate,
-  //     location: updatedEvent.location,
-  //   };
-
-  //   const result = await updateEvent(eventDetails.id, eventData);
-  //   if (result) {
-  //     setEventDetails(updatedEvent);
-  //   }
-  // };
-
   const handleAttendeeSettings = () => {
     if (!isUcMainAdmin) return;
     showToast("error", UNDER_CONSTRUCTION_MESSAGE);
@@ -292,7 +344,6 @@ const EventManagement: React.FC = () => {
 
   const handleSaveAttendeeLimits = (limits: Record<string, number>) => {
     console.warn("Save attendee limits:", limits);
-    // Implement save logic here
   };
 
   const retryFetch = () => {
@@ -448,7 +499,6 @@ const EventManagement: React.FC = () => {
                             Attendance Date Start and End
                           </h3>
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            {/* Start Date/Time */}
                             <div className="flex gap-3">
                               <div className="bg-muted flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg">
                                 <Calendar className="text-muted-foreground h-5 w-5" />
@@ -463,7 +513,6 @@ const EventManagement: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* End Date/Time */}
                             <div className="flex gap-3">
                               <div className="bg-muted flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg">
                                 <Calendar className="text-muted-foreground h-5 w-5" />
@@ -480,36 +529,24 @@ const EventManagement: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Location */}
                         <div className="flex gap-3">
                           <div className="bg-muted flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg">
                             <MapPin className="text-muted-foreground h-5 w-5" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            {/* TODO: Remove these fields soon */}
-                            {/* Hardcoding these two for now for the upcoming event */}
-                            {/* The current Figma design has location field displayed */}
-                            {/* but this isn't yet available in the database models neither the */}
-                            {/* create event (add merch event type) forms, we will soon implement this. */}
-                            <p className="text-sm font-medium">
-                              {/* {eventDetails.location} */}
-                              Cebu Coliseum
-                            </p>
+                            <p className="text-sm font-medium">Cebu Coliseum</p>
                             <p className="text-muted-foreground text-sm">
-                              {/* {eventDetails.locationAddress} */}
                               Sanciangko St., Cebu City, Philippines
                             </p>
                           </div>
                         </div>
 
-                        {/* Description */}
                         <div>
                           <p className="text-muted-foreground text-sm leading-relaxed">
                             {eventDetails.description}
                           </p>
                         </div>
 
-                        {/* Edit Button */}
                         {isUcMainAdmin && (
                           <div>
                             <Button
@@ -533,18 +570,58 @@ const EventManagement: React.FC = () => {
                   value={activeCampusValue}
                   onValueChange={handleCampusChange}
                 >
-                  <div className="w-full overflow-x-auto">
-                    <TabsList className="inline-flex w-max min-w-full gap-2 rounded-none bg-transparent px-0">
-                      {availableCampusCodes.map((campusCode) => (
-                        <TabsTrigger
-                          key={campusCode}
-                          value={campusCode}
-                          className="mx-1 cursor-pointer rounded-none !bg-transparent px-4 py-3 whitespace-nowrap hover:bg-transparent focus:bg-transparent data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[#1C9DDE] data-[state=active]:underline data-[state=active]:decoration-[#1C9DDE] data-[state=active]:decoration-2 data-[state=active]:underline-offset-11"
-                        >
-                          {CAMPUS_CODE_TO_NAME[campusCode]}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
+                  <div className="relative flex items-center">
+                    {/* Left Arrow */}
+                    <button
+                      type="button"
+                      onClick={() => scrollTabs("left")}
+                      className={`bg-background z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border shadow-sm transition-opacity ${
+                        canScrollLeft
+                          ? "hover:bg-accent cursor-pointer opacity-100"
+                          : "pointer-events-none opacity-0"
+                      }`}
+                      aria-label="Scroll tabs left"
+                      tabIndex={canScrollLeft ? 0 : -1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+
+                    {/* Scrollable Tabs */}
+                    <div
+                      ref={tabsScrollRef}
+                      className="scrollbar-hide overflow-x-auto scroll-smooth"
+                      style={{
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
+                      }}
+                    >
+                      <TabsList className="inline-flex w-max gap-2 rounded-none bg-transparent px-2">
+                        {availableCampusCodes.map((campusCode) => (
+                          <TabsTrigger
+                            key={campusCode}
+                            value={campusCode}
+                            className="mx-1 cursor-pointer rounded-none !bg-transparent px-4 py-3 whitespace-nowrap hover:bg-transparent focus:bg-transparent data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[#1C9DDE] data-[state=active]:underline data-[state=active]:decoration-[#1C9DDE] data-[state=active]:decoration-2 data-[state=active]:underline-offset-11"
+                          >
+                            {CAMPUS_CODE_TO_NAME[campusCode]}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </div>
+
+                    {/* Right Arrow */}
+                    <button
+                      type="button"
+                      onClick={() => scrollTabs("right")}
+                      className={`bg-background z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border shadow-sm transition-opacity ${
+                        canScrollRight
+                          ? "hover:bg-accent cursor-pointer opacity-100"
+                          : "pointer-events-none opacity-0"
+                      }`}
+                      aria-label="Scroll tabs right"
+                      tabIndex={canScrollRight ? 0 : -1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
                   </div>
 
                   {availableCampusCodes.map((campusCode) => (
