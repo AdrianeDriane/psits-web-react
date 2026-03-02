@@ -1,23 +1,25 @@
-import React from 'react';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface EventsHeaderProps {
   onAddEvent?: () => void;
 }
 
-export const EventsHeader: React.FC<EventsHeaderProps> = ({ onAddEvent }) => {
+export const EventsHeader: React.FC<EventsHeaderProps> = () => {
   return (
-    <header className="bg-background  px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full  gap-4">
+    <header className="bg-background px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Events</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Create and manage upcoming events.</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Events</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            Create and manage upcoming events.
+          </p>
         </div>
         <Button
-          onClick={onAddEvent}
+          onClick={() => {}}
           size="default"
-          className="w-full sm:w-auto bg-[#1C9DDE] hover:bg-[#1C9DDE]"
+          className="w-full cursor-not-allowed bg-[#1C9DDE] hover:bg-[#1C9DDE] sm:w-auto"
         >
           <Plus />
           <span>Add Event</span>
@@ -28,4 +30,3 @@ export const EventsHeader: React.FC<EventsHeaderProps> = ({ onAddEvent }) => {
 };
 
 export default EventsHeader;
-
