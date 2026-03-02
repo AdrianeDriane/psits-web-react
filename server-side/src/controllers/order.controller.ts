@@ -198,22 +198,7 @@ export const studentAndAdminOrderController = async (
       }
       
 
-      const processedItem = {
-        product_id: item.product_id,
-        imageUrl1: findMerch.imageUrl?.[0],
-        product_name: findMerch.name,
-        limited: findMerch.control === "limited-purchase",
-        price: actualPrice,
-        discount: item.discount || 0, // keep record
-        membership_discount,
-        quantity: item.quantity,
-        sub_total: itemSubtotal,
-        variation: item.variation,
-        sizes: item.sizes,
-        batch: findMerch.batch,
-      };
-
-      processedItems.push(processedItem);
+      
       orderTotal += itemSubtotal;
       if (promo_discount) {
         promo = await Promo.findOne({ promo_name });
@@ -242,6 +227,22 @@ export const studentAndAdminOrderController = async (
           orderTotal = orderTotal - orderTotal * (promo.discount / 100);
         }
       }
+      const processedItem = {
+        product_id: item.product_id,
+        imageUrl1: findMerch.imageUrl?.[0],
+        product_name: findMerch.name,
+        limited: findMerch.control === "limited-purchase",
+        price: actualPrice,
+        discount: item.discount || 0, // keep record
+        membership_discount,
+        quantity: item.quantity,
+        sub_total: orderTotal,
+        variation: item.variation,
+        sizes: item.sizes,
+        batch: findMerch.batch,
+      };
+
+      processedItems.push(processedItem);
     }
 
     const finalOrder = {
