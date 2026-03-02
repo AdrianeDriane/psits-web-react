@@ -19,6 +19,9 @@ import {
 } from "@/features/admin/event-management/components/modals";
 import { getEventById } from "@/features/events/api/eventService";
 import type { Event as ApiEvent } from "@/features/events/types/event.types";
+import { useAuth } from "@/features/auth";
+import type { Campus } from "@/features/auth/types/auth.types";
+import { showToast } from "@/utils/alertHelper";
 
 interface EventDetails {
   id: string;
@@ -32,23 +35,28 @@ interface EventDetails {
   locationAddress: string;
   description: string;
   image: string;
+  campusCodes: Campus[];
   venues: string[];
 }
 
-const DEFAULT_CAMPUSES = [
-  "University of Cebu Main Campus",
-  "University of Cebu Banilad Campus",
-  "University of Cebu Lapu-Lapu & Mandaue",
-  "University of Cebu Pardo & Talisay",
-];
-
-const CAMPUS_CODE_TO_NAME: Record<string, string> = {
+const CAMPUS_CODE_TO_NAME: Record<Campus, string> = {
   "UC-Main": "University of Cebu Main Campus",
   "UC-Banilad": "University of Cebu Banilad Campus",
   "UC-LM": "University of Cebu Lapu-Lapu & Mandaue",
   "UC-PT": "University of Cebu Pardo & Talisay",
-  "UC-CS": "University of Cebu College of Systems and Technology",
+  "UC-CS": "University of Cebu Main - Computer Science",
 };
+
+const DEFAULT_CAMPUSES: Campus[] = [
+  "UC-Main",
+  "UC-Banilad",
+  "UC-LM",
+  "UC-PT",
+  "UC-CS",
+];
+
+const UNDER_CONSTRUCTION_MESSAGE =
+  "This is under construction, visit legacy website to access this functionality.";
 
 interface SessionConfigType {
   enabled?: boolean;
@@ -121,22 +129,32 @@ const mapApiEventToEventDetails = (
 ): EventDetails => {
   const sessionConfig = event.sessionConfig as EventSessionConfig | undefined;
   const { startTime, endTime } = getSessionBounds(sessionConfig);
-  const mappedVenues = Array.isArray(event.limit)
+  const mappedCampusCodes = Array.isArray(event.limit)
     ? event.limit
         .map((item) => {
           const campusCode =
             item && typeof item === "object" && "campus" in item
               ? String((item as { campus?: unknown }).campus ?? "")
               : "";
-          return CAMPUS_CODE_TO_NAME[campusCode] ?? null;
+          if (campusCode in CAMPUS_CODE_TO_NAME) {
+            return campusCode as Campus;
+          }
+          return null;
         })
-        .filter((campus): campus is string => Boolean(campus))
+        .filter((campus): campus is Campus => Boolean(campus))
     : [];
 
   const image =
     Array.isArray(event.eventImage) && event.eventImage.length > 0
       ? String(event.eventImage[0])
       : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&h=600&fit=crop";
+
+  const normalizedCampusCodes = Array.from(
+    new Set<Campus>([
+      "UC-Main",
+      ...(mappedCampusCodes.length > 0 ? mappedCampusCodes : DEFAULT_CAMPUSES),
+    ])
+  );
 
   return {
     id: String(event.eventId ?? routeEventId),
@@ -156,12 +174,14 @@ const mapApiEventToEventDetails = (
       (typeof event.eventDescription === "string" && event.eventDescription) ||
       "No description available.",
     image,
-    venues: mappedVenues.length > 0 ? mappedVenues : DEFAULT_CAMPUSES,
+    campusCodes: normalizedCampusCodes,
+    venues: normalizedCampusCodes.map((code) => CAMPUS_CODE_TO_NAME[code]),
   };
 };
 
 const EventManagement: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const normalizedRouteEventId = eventId?.trim() ?? "";
   const hasValidRouteEventId = normalizedRouteEventId.length > 0;
@@ -171,18 +191,41 @@ const EventManagement: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(
     hasValidRouteEventId ? null : "Missing event ID from route."
   );
-  const [activeCampus, setActiveCampus] = useState(DEFAULT_CAMPUSES[0]);
+  const [activeCampus, setActiveCampus] = useState<Campus>(DEFAULT_CAMPUSES[0]);
   const [isAttendeeSettingsOpen, setIsAttendeeSettingsOpen] = useState(false);
   const [isEditEventOpen, setIsEditEventOpen] = useState(false);
 
-  const availableCampuses = useMemo(
-    () => eventDetails?.venues ?? DEFAULT_CAMPUSES,
-    [eventDetails?.venues]
-  );
+  const isAdmin = user?.role === "Admin";
+  const isUcMainAdmin = isAdmin && user?.campus === "UC-Main";
 
-  const activeCampusValue = availableCampuses.includes(activeCampus)
+  const availableCampusCodes = useMemo(() => {
+    const eventCampusCodes = DEFAULT_CAMPUSES;
+
+    if (!isAdmin || isUcMainAdmin) {
+      return eventCampusCodes;
+    }
+
+    const userCampus = user?.campus;
+    if (!userCampus) {
+      return [eventCampusCodes[0]];
+    }
+
+    if (eventCampusCodes.includes(userCampus)) {
+      return [userCampus];
+    }
+
+    return [userCampus];
+  }, [eventDetails?.campusCodes, isAdmin, isUcMainAdmin, user?.campus]);
+
+  const activeCampusValue = availableCampusCodes.includes(activeCampus)
     ? activeCampus
-    : availableCampuses[0];
+    : availableCampusCodes[0];
+
+  const handleCampusChange = (campusCode: string) => {
+    if (campusCode in CAMPUS_CODE_TO_NAME) {
+      setActiveCampus(campusCode as Campus);
+    }
+  };
 
   useEffect(() => {
     if (!hasValidRouteEventId) {
@@ -224,8 +267,8 @@ const EventManagement: React.FC = () => {
   };
 
   const handleEditEvent = () => {
-    if (!eventDetails) return;
-    setIsEditEventOpen(true);
+    if (!eventDetails || !isUcMainAdmin) return;
+    showToast("error", UNDER_CONSTRUCTION_MESSAGE);
   };
 
   // const handleSaveEvent = async (updatedEvent: any) => {
@@ -243,7 +286,8 @@ const EventManagement: React.FC = () => {
   // };
 
   const handleAttendeeSettings = () => {
-    setIsAttendeeSettingsOpen(true);
+    if (!isUcMainAdmin) return;
+    showToast("error", UNDER_CONSTRUCTION_MESSAGE);
   };
 
   const handleSaveAttendeeLimits = (limits: Record<string, number>) => {
@@ -283,16 +327,18 @@ const EventManagement: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex w-full justify-end sm:w-auto">
-            <Button
-              variant="outline"
-              onClick={handleAttendeeSettings}
-              className="cursor-pointer"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              Attendee Settings
-            </Button>
-          </div>
+          {isUcMainAdmin && (
+            <div className="flex w-full justify-end sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={handleAttendeeSettings}
+                className="cursor-not-allowed opacity-60"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Attendee Settings
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -464,15 +510,17 @@ const EventManagement: React.FC = () => {
                         </div>
 
                         {/* Edit Button */}
-                        <div>
-                          <Button
-                            onClick={handleEditEvent}
-                            variant="outline"
-                            className="w-full cursor-pointer"
-                          >
-                            Edit Event
-                          </Button>
-                        </div>
+                        {isUcMainAdmin && (
+                          <div>
+                            <Button
+                              onClick={handleEditEvent}
+                              variant="outline"
+                              className="w-full cursor-not-allowed opacity-60"
+                            >
+                              Edit Event
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -481,24 +529,34 @@ const EventManagement: React.FC = () => {
 
               {/* Attendees Section - campuses tabs */}
               <div className="space-y-4">
-                <Tabs value={activeCampusValue} onValueChange={setActiveCampus}>
-                  <TabsList className="flex w-full gap-2 overflow-x-auto rounded-none bg-transparent px-0">
-                    {availableCampuses.map((campus) => (
-                      <TabsTrigger
-                        key={campus}
-                        value={campus}
-                        className="mx-1 cursor-pointer rounded-none !bg-transparent px-4 py-3 whitespace-nowrap hover:bg-transparent focus:bg-transparent data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[#1C9DDE] data-[state=active]:underline data-[state=active]:decoration-[#1C9DDE] data-[state=active]:decoration-2 data-[state=active]:underline-offset-11"
-                      >
-                        {campus}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
+                <Tabs
+                  value={activeCampusValue}
+                  onValueChange={handleCampusChange}
+                >
+                  <div className="w-full overflow-x-auto">
+                    <TabsList className="inline-flex w-max min-w-full gap-2 rounded-none bg-transparent px-0">
+                      {availableCampusCodes.map((campusCode) => (
+                        <TabsTrigger
+                          key={campusCode}
+                          value={campusCode}
+                          className="mx-1 cursor-pointer rounded-none !bg-transparent px-4 py-3 whitespace-nowrap hover:bg-transparent focus:bg-transparent data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[#1C9DDE] data-[state=active]:underline data-[state=active]:decoration-[#1C9DDE] data-[state=active]:decoration-2 data-[state=active]:underline-offset-11"
+                        >
+                          {CAMPUS_CODE_TO_NAME[campusCode]}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
 
-                  {availableCampuses.map((campus) => (
-                    <TabsContent key={campus} value={campus} className="mt-6">
+                  {availableCampusCodes.map((campusCode) => (
+                    <TabsContent
+                      key={campusCode}
+                      value={campusCode}
+                      className="mt-6"
+                    >
                       <AttendeesTable
-                        venue={campus}
+                        venue={CAMPUS_CODE_TO_NAME[campusCode]}
                         eventId={eventDetails.id}
+                        campusCode={campusCode}
                       />
                     </TabsContent>
                   ))}
@@ -513,7 +571,10 @@ const EventManagement: React.FC = () => {
       <AttendeeSettingsModal
         open={isAttendeeSettingsOpen}
         onOpenChange={setIsAttendeeSettingsOpen}
-        venues={eventDetails?.venues ?? DEFAULT_CAMPUSES}
+        venues={
+          eventDetails?.venues ??
+          DEFAULT_CAMPUSES.map((code) => CAMPUS_CODE_TO_NAME[code])
+        }
         onSave={handleSaveAttendeeLimits}
       />
       <EditEventModal

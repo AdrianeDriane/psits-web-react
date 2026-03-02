@@ -4,7 +4,8 @@ import backendConnection from "../../../api/backendApi";
 import type {
   ApiErrorResponse,
   Event,
-  AttendeesResponse,
+  GetAttendeesParams,
+  PaginatedAttendeesResponse,
   EventCheckData,
   RaffleResponse,
   StatisticsData,
@@ -141,25 +142,20 @@ export const updateEvent = async (
 };
 
 export const getAttendees = async (
-  id: string
-): Promise<AttendeesResponse | false> => {
+  eventId: string,
+  params: GetAttendeesParams = {}
+): Promise<PaginatedAttendeesResponse | false> => {
   try {
-    const token = getAuthToken();
-    const response = await axios.get(
-      `${backendConnection()}/api/events/attendees/${id}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    if (!eventId?.trim()) {
+      return false;
+    }
+
+    const response = await api.get<PaginatedAttendeesResponse>(
+      `/api/v2/events/${eventId}/attendees`,
+      { params }
     );
 
-    return {
-      data: response.data.data[0],
-      attendees: response.data.data[0].attendees,
-      merch: response.data.merch_data,
-    };
+    return response.data;
   } catch (error) {
     return handleApiError(error);
   }

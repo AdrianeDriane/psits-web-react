@@ -52,6 +52,35 @@ export interface AttendeesResponse {
   merch: MerchData;
 }
 
+export interface GetAttendeesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  campus?: string;
+  status?: Array<"present" | "absent">;
+  course?: string[];
+  yearLevel?: string[];
+  confirmedOn?: string;
+}
+
+export interface AttendeesPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface PaginatedAttendeesResponse {
+  data: Attendee[];
+  pagination: AttendeesPagination;
+  access?: {
+    isUcMainAdmin: boolean;
+    campusScope: string;
+  };
+}
+
 export interface EventCheckData {
   limit: number;
   currentCount: number;

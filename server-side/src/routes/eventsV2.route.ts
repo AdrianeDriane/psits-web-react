@@ -5,6 +5,7 @@ import {
 } from "../middlewares/authV2.middleware";
 import {
   getAllEventsV2Controller,
+  getEventAttendeesV2Controller,
   getEventByIdV2Controller,
 } from "../controllers/eventV2.controller";
 
@@ -24,6 +25,14 @@ router.get(
   requireAccessTokenV2,
   roleAuthenticateV2(["Admin", "Student"]),
   getEventByIdV2Controller
+);
+
+// GET paginated attendees for specific event
+router.get(
+  "/:eventId/attendees",
+  requireAccessTokenV2,
+  roleAuthenticateV2(["Admin"]),
+  getEventAttendeesV2Controller
 );
 
 export default router;
