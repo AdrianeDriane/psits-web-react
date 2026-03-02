@@ -16,8 +16,21 @@ const getEventId = (event: ApiEvent): string =>
 const getEventTitle = (event: ApiEvent): string =>
   String(event.eventName ?? "Untitled Event");
 
-const getEventDate = (event: ApiEvent): string =>
-  String(event.eventDate ?? "TBA");
+const getEventDate = (event: ApiEvent): string => {
+  if (!event.eventDate) return "TBA";
+
+  const date = new Date(event.eventDate);
+
+  // Fallback to original string if the date is invalid
+  if (isNaN(date.getTime())) return String(event.eventDate);
+
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC", // Prevents day-shifting depending on the user's local timezone
+  }).format(date);
+};
 
 const getEventImage = (event: ApiEvent): string => {
   const firstImage = Array.isArray(event.eventImage)
@@ -87,11 +100,17 @@ export const EventCard: React.FC<EventCardProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onViewStatistics?.(eventId)}>
+              <DropdownMenuItem
+                className="cursor-not-allowed"
+                onClick={() => onViewStatistics?.(eventId)}
+              >
                 <BarChart3 />
                 <span>Statistics</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onViewRaffle?.(eventId)}>
+              <DropdownMenuItem
+                className="cursor-not-allowed"
+                onClick={() => onViewRaffle?.(eventId)}
+              >
                 <Ticket />
                 <span>Raffle</span>
               </DropdownMenuItem>

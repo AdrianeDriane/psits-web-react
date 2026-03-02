@@ -1,15 +1,25 @@
 import { Request, Response } from "express";
 import { Event } from "../models/event.model";
-import { Merch } from "../models/merch.model";
-import mongoose, { Types } from "mongoose";
 import { IEvent } from "../models/event.interface";
-import { getSgDate } from "../custom_function/date.formatter";
-import { ISessionConfig } from "../models/event.interface";
-import { IAttendanceSession, IAttendee } from "../models/attendee.interface";
+
+/**
+ * Returns a Date object representing the start of the day (00:00:00)
+ * 6 days prior to the current date.
+ */
+const getSevenDayWindowCutoffDate = (): Date => {
+  const date = new Date();
+  date.setDate(date.getDate() - 6);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
 
 export const getAllEventsV2Controller = async (req: Request, res: Response) => {
   try {
-    const events: IEvent[] = await Event.find().select("-attendees");
+    const cutoffDate = getSevenDayWindowCutoffDate();
+
+    const events: IEvent[] = await Event.find({
+      eventDate: { $gte: cutoffDate },
+    }).select("-attendees");
 
     if (!events || events.length === 0) {
       return res.status(404).json({ message: "No events found" });
