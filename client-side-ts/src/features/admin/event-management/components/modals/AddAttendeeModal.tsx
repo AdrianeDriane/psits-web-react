@@ -1,23 +1,23 @@
-import React, { useState } from 'react';
-import { X, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { X, Eye, EyeOff } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { addAttendee } from '@/features/events/api/event';
-import { showToast } from '@/utils/alertHelper';
+} from "@/components/ui/select";
+import { addAttendee } from "@/features/events/api/eventService";
+import { showToast } from "@/utils/alertHelper";
 
 interface AddAttendeeModalProps {
   open: boolean;
@@ -41,10 +41,15 @@ export interface AttendeeFormData {
   confirmPassword: string;
 }
 
-const CAMPUS_OPTIONS = ['Main Campus', 'Banilad Campus', 'LM Campus', 'Maritime Campus'];
-const COURSE_OPTIONS = ['BSIT', 'BSCS', 'ACT', 'BLIS'];
-const YEAR_LEVEL_OPTIONS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
-const SHIRT_SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+const CAMPUS_OPTIONS = [
+  "Main Campus",
+  "Banilad Campus",
+  "LM Campus",
+  "Maritime Campus",
+];
+const COURSE_OPTIONS = ["BSIT", "BSCS", "ACT", "BLIS"];
+const YEAR_LEVEL_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+const SHIRT_SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
 export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
   open,
@@ -54,18 +59,18 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<AttendeeFormData>({
-    studentId: '',
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    email: '',
-    campus: '',
-    course: '',
-    yearLevel: '',
-    shirtSize: '',
-    shirtPrice: '',
-    password: '',
-    confirmPassword: '',
+    studentId: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    email: "",
+    campus: "",
+    course: "",
+    yearLevel: "",
+    shirtSize: "",
+    shirtPrice: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -78,43 +83,43 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
   const handleSubmit = async () => {
     // Validate required fields
     if (!formData.studentId.trim()) {
-      showToast('error', 'Student ID is required');
+      showToast("error", "Student ID is required");
       return;
     }
 
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      showToast('error', 'First name and last name are required');
+      showToast("error", "First name and last name are required");
       return;
     }
 
     if (!formData.email.trim()) {
-      showToast('error', 'Email is required');
+      showToast("error", "Email is required");
       return;
     }
 
     if (!formData.campus || !formData.course || !formData.yearLevel) {
-      showToast('error', 'Campus, course, and year level are required');
+      showToast("error", "Campus, course, and year level are required");
       return;
     }
 
     if (!formData.shirtSize) {
-      showToast('error', 'Shirt size is required');
+      showToast("error", "Shirt size is required");
       return;
     }
 
     if (!formData.shirtPrice) {
-      showToast('error', 'Shirt price is required');
+      showToast("error", "Shirt price is required");
       return;
     }
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      showToast('error', 'Passwords do not match');
+      showToast("error", "Passwords do not match");
       return;
     }
 
     if (!formData.password.trim()) {
-      showToast('error', 'Password is required');
+      showToast("error", "Password is required");
       return;
     }
 
@@ -147,8 +152,8 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('Error adding attendee:', error);
-      showToast('error', 'Failed to add attendee');
+      console.error("Error adding attendee:", error);
+      showToast("error", "Failed to add attendee");
     } finally {
       setIsLoading(false);
     }
@@ -156,18 +161,18 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
 
   const handleReset = () => {
     setFormData({
-      studentId: '',
-      firstName: '',
-      middleName: '',
-      lastName: '',
-      email: '',
-      campus: '',
-      course: '',
-      yearLevel: '',
-      shirtSize: '',
-      shirtPrice: '',
-      password: '',
-      confirmPassword: '',
+      studentId: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      email: "",
+      campus: "",
+      course: "",
+      yearLevel: "",
+      shirtSize: "",
+      shirtPrice: "",
+      password: "",
+      confirmPassword: "",
     });
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -180,82 +185,102 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-4xl sm:max-w-2xl max-h-[80vh] flex flex-col overflow-hidden p-0 gap-0 rounded-lg sm:rounded-xl" showCloseButton={false}>
-        <DialogHeader className="px-6 py-4 border-b flex-none">
+      <DialogContent
+        className="flex max-h-[80vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-lg p-0 sm:max-w-2xl sm:rounded-xl"
+        showCloseButton={false}
+      >
+        <DialogHeader className="flex-none border-b px-6 py-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold leading-6">Add Attendee</DialogTitle>
+            <DialogTitle className="text-xl leading-6 font-semibold">
+              Add Attendee
+            </DialogTitle>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={handleCancel}
-              className="h-8 w-8 flex items-center justify-center rounded-full cursor-pointer"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <div className="space-y-4">
             {/* Student ID Number */}
             <div>
-              <Label htmlFor="studentId" className="mb-2">Student ID Number</Label>
+              <Label htmlFor="studentId" className="mb-2">
+                Student ID Number
+              </Label>
               <Input
                 id="studentId"
                 placeholder="Enter student ID number"
                 value={formData.studentId}
-                onChange={(e) => handleChange('studentId', e.target.value)}
+                onChange={(e) => handleChange("studentId", e.target.value)}
               />
             </div>
 
             {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <Label htmlFor="firstName" className="mb-2">First Name</Label>
+                <Label htmlFor="firstName" className="mb-2">
+                  First Name
+                </Label>
                 <Input
                   id="firstName"
                   placeholder="Enter first name"
                   value={formData.firstName}
-                  onChange={(e) => handleChange('firstName', e.target.value)}
+                  onChange={(e) => handleChange("firstName", e.target.value)}
                 />
               </div>
               <div>
-                <Label htmlFor="middleName" className="mb-2">Middle Name</Label>
+                <Label htmlFor="middleName" className="mb-2">
+                  Middle Name
+                </Label>
                 <Input
                   id="middleName"
                   placeholder="Enter middle name"
                   value={formData.middleName}
-                  onChange={(e) => handleChange('middleName', e.target.value)}
+                  onChange={(e) => handleChange("middleName", e.target.value)}
                 />
               </div>
               <div>
-                <Label htmlFor="lastName" className="mb-2">Last Name</Label>
+                <Label htmlFor="lastName" className="mb-2">
+                  Last Name
+                </Label>
                 <Input
                   id="lastName"
                   placeholder="Enter last name"
                   value={formData.lastName}
-                  onChange={(e) => handleChange('lastName', e.target.value)}
+                  onChange={(e) => handleChange("lastName", e.target.value)}
                 />
               </div>
             </div>
 
             {/* Email Address */}
             <div>
-              <Label htmlFor="email" className="mb-2">Email Address</Label>
+              <Label htmlFor="email" className="mb-2">
+                Email Address
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="Enter email address"
                 value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
+                onChange={(e) => handleChange("email", e.target.value)}
               />
             </div>
 
             {/* Campus, Course, Year Level */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <Label htmlFor="campus" className="mb-2">Campus</Label>
-                <Select value={formData.campus} onValueChange={(value) => handleChange('campus', value)}>
+                <Label htmlFor="campus" className="mb-2">
+                  Campus
+                </Label>
+                <Select
+                  value={formData.campus}
+                  onValueChange={(value) => handleChange("campus", value)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select campus" />
                   </SelectTrigger>
@@ -269,8 +294,13 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 </Select>
               </div>
               <div>
-                <Label htmlFor="course" className="mb-2">Course</Label>
-                <Select value={formData.course} onValueChange={(value) => handleChange('course', value)}>
+                <Label htmlFor="course" className="mb-2">
+                  Course
+                </Label>
+                <Select
+                  value={formData.course}
+                  onValueChange={(value) => handleChange("course", value)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select course" />
                   </SelectTrigger>
@@ -284,8 +314,13 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 </Select>
               </div>
               <div>
-                <Label htmlFor="yearLevel" className="mb-2">Year Level</Label>
-                <Select value={formData.yearLevel} onValueChange={(value) => handleChange('yearLevel', value)}>
+                <Label htmlFor="yearLevel" className="mb-2">
+                  Year Level
+                </Label>
+                <Select
+                  value={formData.yearLevel}
+                  onValueChange={(value) => handleChange("yearLevel", value)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select year level" />
                   </SelectTrigger>
@@ -301,10 +336,15 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
             </div>
 
             {/* Shirt Size and Price */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="shirtSize" className="mb-2">Shirt Size</Label>
-                <Select value={formData.shirtSize} onValueChange={(value) => handleChange('shirtSize', value)}>
+                <Label htmlFor="shirtSize" className="mb-2">
+                  Shirt Size
+                </Label>
+                <Select
+                  value={formData.shirtSize}
+                  onValueChange={(value) => handleChange("shirtSize", value)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select size" />
                   </SelectTrigger>
@@ -318,17 +358,19 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 </Select>
               </div>
               <div>
-                <Label htmlFor="shirtPrice" className="mb-2">Shirt Price</Label>
+                <Label htmlFor="shirtPrice" className="mb-2">
+                  Shirt Price
+                </Label>
                 <div className="relative">
                   <Input
                     id="shirtPrice"
                     type="number"
                     placeholder="Enter price"
                     value={formData.shirtPrice}
-                    onChange={(e) => handleChange('shirtPrice', e.target.value)}
+                    onChange={(e) => handleChange("shirtPrice", e.target.value)}
                     className="pr-12"
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+                  <div className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium">
                     PHP
                   </div>
                 </div>
@@ -336,48 +378,62 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
             </div>
 
             {/* Password Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="password" className="mb-2">Password</Label>
+                <Label htmlFor="password" className="mb-2">
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="Password"
                     value={formData.password}
-                    onChange={(e) => handleChange('password', e.target.value)}
+                    onChange={(e) => handleChange("password", e.target.value)}
                     className="pr-10"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    className="absolute top-1/2 right-2 -translate-y-1/2"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
               <div>
-                <Label htmlFor="confirmPassword" className="mb-2">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="mb-2">
+                  Confirm Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm Password"
                     value={formData.confirmPassword}
-                    onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("confirmPassword", e.target.value)
+                    }
                     className="pr-10"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    className="absolute top-1/2 right-2 -translate-y-1/2"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -386,12 +442,16 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex-none flex items-center justify-end gap-3 px-6 py-4 border-t bg-background">
+        <div className="bg-background flex flex-none items-center justify-end gap-3 border-t px-6 py-4">
           <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} className="bg-[#1C9DDE] hover:bg-[#1C9DDE]" disabled={isLoading}>
-            {isLoading ? 'Adding...' : 'Add Attendee'}
+          <Button
+            onClick={handleSubmit}
+            className="bg-[#1C9DDE] hover:bg-[#1C9DDE]"
+            disabled={isLoading}
+          >
+            {isLoading ? "Adding..." : "Add Attendee"}
           </Button>
         </div>
       </DialogContent>

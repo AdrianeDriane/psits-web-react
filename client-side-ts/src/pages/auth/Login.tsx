@@ -12,7 +12,7 @@ export default function Login() {
   useEffect(() => {
     if (isAuthenticated && user) {
       if (user.role === "Admin") {
-        navigate("/admin", { replace: true });
+        navigate("/admin/events", { replace: true });
       } else {
         navigate("/", { replace: true });
       }
@@ -30,7 +30,7 @@ export default function Login() {
       showToast("success", "Signed in successfully");
 
       if (loggedInUser.role === "Admin") {
-        navigate("/admin");
+        navigate("/admin/events");
       } else {
         navigate("/");
       }

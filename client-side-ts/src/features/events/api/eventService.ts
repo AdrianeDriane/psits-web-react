@@ -1,123 +1,32 @@
 import axios, { AxiosError } from "axios";
 import { showToast } from "../../../utils/alertHelper";
 import backendConnection from "../../../api/backendApi";
-
-interface ApiErrorResponse {
-  message?: string;
-}
-
-interface Event {
-  eventId?: string;
-  eventName: string;
-  eventImage?: string[];
-  eventDate: string | Date;
-  eventDescription?: string;
-  attendanceType?: string;
-  sessionConfig?: Record<string, unknown>;
-  createdBy?: string;
-  attendees?: Attendee[];
-  status?: string;
-  limit?: unknown[];
-  sales_data?: unknown[];
-  totalUnitsSold?: number;
-  totalRevenueAll?: number;
-  [key: string]: unknown;
-}
-
-interface Attendee {
-  id_number: string;
-  name: string;
-  campus: string;
-  course: string;
-  year: number;
-  attendance?: Record<string, unknown>; 
-  confirmedBy?: string;
-  shirtSize?: string;
-  shirtPrice?: number;
-  raffleIsRemoved?: boolean;
-  raffleIsWinner?: boolean;
-  transactBy?: string;
-  transactDate?: string | Date | null;
-  isPresent?: boolean;
-  [key: string]: unknown;
-}
-
-interface MerchData {
-  _id?: string;
-  name?: string;
-  price?: number;
-  stocks?: number;
-  [key: string]: unknown;
-}
-
-interface AttendeesResponse {
-  data: Event & { attendees: Attendee[] };
-  attendees: Attendee[];
-  merch: MerchData;
-}
-
-interface EventCheckData {
-  limit: number;
-  currentCount: number;
-  [key: string]: unknown;
-}
-
-interface RaffleResponse {
-  data: Attendee[];
-  message: string;
-}
-
-interface StatisticsData {
-  totalAttendees: number;
-  presentCount: number;
-  [key: string]: unknown;
-}
-
-interface CreateEventData {
-  name: string;
-  date: string;
-  [key: string]: unknown;
-}
-
-interface CreateEventResponse {
-  message: string;
-  eventId?: string;
-  [key: string]: unknown;
-}
-
-interface AddAttendeeFormData {
-  eventId: string;
-  attendeeId: string; 
-  [key: string]: unknown;
-}
-
-interface RemoveAttendeeFormData {
-  eventId: string;
-  attendeeId: string;
-  [key: string]: unknown;
-}
-
-interface UpdateSettingsFormData {
-  [key: string]: unknown;
-}
-
-interface RaffleWinnerResponse {
-  message: string;
-  winner?: Attendee;
-  [key: string]: unknown;
-}
-
-interface RemoveRaffleResponse {
-  message: string;
-  [key: string]: unknown;
-}
+import type {
+  ApiErrorResponse,
+  Event,
+  AttendeesResponse,
+  EventCheckData,
+  RaffleResponse,
+  StatisticsData,
+  CreateEventData,
+  CreateEventResponse,
+  AddAttendeeFormData,
+  RemoveAttendeeFormData,
+  UpdateSettingsFormData,
+  RaffleWinnerResponse,
+  RemoveRaffleResponse,
+} from "../types/event.types";
+import api from "@/api/axios";
 
 const getAuthToken = (): string | null => {
   return sessionStorage.getItem("Token");
 };
 
 // Helper function to handle API errors
-const handleApiError = (error: unknown, shouldReload: boolean = false): false => {
+const handleApiError = (
+  error: unknown,
+  shouldReload: boolean = false
+): false => {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<ApiErrorResponse>;
     if (axiosError.response?.data) {
@@ -125,7 +34,10 @@ const handleApiError = (error: unknown, shouldReload: boolean = false): false =>
         //uncomment the line if its not error
         // window.location.reload();
       }
-      console.error("Error:", axiosError.response.data.message || "An error occurred");
+      console.error(
+        "Error:",
+        axiosError.response.data.message || "An error occurred"
+      );
     } else {
       console.error("Error:", "An error occurred");
     }
@@ -135,26 +47,28 @@ const handleApiError = (error: unknown, shouldReload: boolean = false): false =>
   return false;
 };
 
+// Optional: You can define an interface for the expected API response shape
+interface EventApiResponse {
+  data: Event[];
+}
+
 export const getEvents = async (): Promise<Event[] | false> => {
   try {
-    const token = getAuthToken();
-    const response = await axios.get<Event[]>(
-      `${backendConnection()}/api/events/get-all-event`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    const response = await api.get<EventApiResponse>(
+      "/api/v2/events/get-all-event"
     );
 
-    return response.data;
+    const eventsArray = response.data.data;
+
+    return Array.isArray(eventsArray) ? eventsArray : [];
   } catch (error) {
     return handleApiError(error, true);
   }
 };
 
-export const createEvent = async (data: CreateEventData): Promise<CreateEventResponse | false> => {
+export const createEvent = async (
+  data: CreateEventData
+): Promise<CreateEventResponse | false> => {
   try {
     const token = getAuthToken();
     const response = await axios.post<CreateEventResponse>(
@@ -174,7 +88,10 @@ export const createEvent = async (data: CreateEventData): Promise<CreateEventRes
   }
 };
 
-export const updateEvent = async (eventId: string, data: Partial<Event>): Promise<boolean> => {
+export const updateEvent = async (
+  eventId: string,
+  data: Partial<Event>
+): Promise<boolean> => {
   try {
     const token = getAuthToken();
     const response = await axios.put(
@@ -203,7 +120,9 @@ export const updateEvent = async (eventId: string, data: Partial<Event>): Promis
   }
 };
 
-export const getAttendees = async (id: string): Promise<AttendeesResponse | false> => {
+export const getAttendees = async (
+  id: string
+): Promise<AttendeesResponse | false> => {
   try {
     const token = getAuthToken();
     const response = await axios.get(
@@ -232,8 +151,7 @@ export const markAsPresent = async (
   campus: string,
   course: string,
   year: string,
-  attendeeName: string,
-  navigate?: unknown
+  attendeeName: string
 ): Promise<boolean | undefined> => {
   try {
     const token = getAuthToken();
@@ -271,7 +189,9 @@ export const markAsPresent = async (
   }
 };
 
-export const getEventCheck = async (eventId: string): Promise<EventCheckData | false> => {
+export const getEventCheck = async (
+  eventId: string
+): Promise<EventCheckData | false> => {
   try {
     const token = getAuthToken();
     const response = await axios.get<{ data: EventCheckData }>(
@@ -382,7 +302,9 @@ export const removeRaffleAttendee = async (
   }
 };
 
-export const addAttendee = async (formData: AddAttendeeFormData): Promise<boolean> => {
+export const addAttendee = async (
+  formData: AddAttendeeFormData
+): Promise<boolean> => {
   try {
     const token = getAuthToken();
     const response = await axios.post(
@@ -432,7 +354,6 @@ export const getStatistic = async (
   }
 };
 
-
 export const removeAttendee = async (
   formData: RemoveAttendeeFormData
 ): Promise<boolean | AxiosError> => {
@@ -459,8 +380,9 @@ export const removeAttendee = async (
   }
 };
 
-
-export const removeEvent = async (eventId: string): Promise<boolean | AxiosError> => {
+export const removeEvent = async (
+  eventId: string
+): Promise<boolean | AxiosError> => {
   try {
     const token = getAuthToken();
     const response = await axios.post(

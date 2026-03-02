@@ -18,6 +18,7 @@ import merchRoutes from "./routes/merchandise.route";
 import eventRoutes from "./routes/events.route";
 import promoRoutes from "./routes/promo.route";
 import authV2Routes from "./routes/authV2.route";
+import eventsV2Routes from "./routes/eventsV2.route";
 import { checkPromos } from "./custom_function/check_promo";
 import documentationRoutes from "./routes/documentation.route";
 import { errorHandler } from "./util/errors.util";
@@ -65,6 +66,7 @@ app.use("/api/promo", promoRoutes);
 app.use("/api", privateRoutes);
 app.use("/api/docs", documentationRoutes);
 app.use("/api/v2/auth", authV2Routes);
+app.use("/api/v2/events", eventsV2Routes);
 
 app.use(errorHandler);
 

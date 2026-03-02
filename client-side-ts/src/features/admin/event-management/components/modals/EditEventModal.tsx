@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { EventInfoTab } from './EventInfoTab';
-import { SessionSetupTab } from './SessionSetupTab';
-import type { EventFormData } from './AddEventModal';
-import { updateEvent } from '@/features/events/api/event';
-import { showToast } from '@/utils/alertHelper';
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { EventInfoTab } from "./EventInfoTab";
+import { SessionSetupTab } from "./SessionSetupTab";
+import type { EventFormData } from "./AddEventModal";
+import { updateEvent } from "@/features/events/api/eventService";
+import { showToast } from "@/utils/alertHelper";
 
 interface EditEventModalProps {
   open: boolean;
@@ -34,13 +34,13 @@ export const EditEventModal: React.FC<EditEventModalProps> = ({
   onSaveEvent,
   eventData,
 }) => {
-  const [activeTab, setActiveTab] = useState('event-info');
+  const [activeTab, setActiveTab] = useState("event-info");
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<EventFormData>({
-    eventName: '',
-    eventDescription: '',
+    eventName: "",
+    eventDescription: "",
     eventSchedule: undefined,
-    location: '',
+    location: "",
     image: null,
     sessions: [],
   });
@@ -49,10 +49,12 @@ export const EditEventModal: React.FC<EditEventModalProps> = ({
   useEffect(() => {
     if (eventData && open) {
       setFormData({
-        eventName: eventData.title || '',
-        eventDescription: eventData.description || '',
-        eventSchedule: eventData.startDate ? new Date(eventData.startDate) : undefined,
-        location: eventData.location || '',
+        eventName: eventData.title || "",
+        eventDescription: eventData.description || "",
+        eventSchedule: eventData.startDate
+          ? new Date(eventData.startDate)
+          : undefined,
+        location: eventData.location || "",
         image: null, // Keep as null since we can't convert URL to File
         sessions: [],
       });
@@ -64,12 +66,12 @@ export const EditEventModal: React.FC<EditEventModalProps> = ({
 
     // Validate required fields
     if (!formData.eventName.trim()) {
-      showToast('error', 'Event name is required');
+      showToast("error", "Event name is required");
       return;
     }
 
     if (!formData.eventSchedule) {
-      showToast('error', 'Event schedule is required');
+      showToast("error", "Event schedule is required");
       return;
     }
 
@@ -99,26 +101,30 @@ export const EditEventModal: React.FC<EditEventModalProps> = ({
           id: eventData.id,
           title: formData.eventName,
           date: eventDate.toLocaleDateString(),
-          image: formData.image ? URL.createObjectURL(formData.image) : eventData.image,
-          status: 'view' as const,
+          image: formData.image
+            ? URL.createObjectURL(formData.image)
+            : eventData.image,
+          status: "view" as const,
           description: formData.eventDescription,
           location: formData.location,
           locationAddress: formData.location,
-          startDate: eventDate.toLocaleDateString('en-US', {
-            weekday: 'short',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
+          startDate: eventDate.toLocaleDateString("en-US", {
+            weekday: "short",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           }),
-          startTime: formData.sessions[0]?.morningSession.startTime || '8:00 AM',
-          endDate: eventDate.toLocaleDateString('en-US', {
-            weekday: 'short',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
+          startTime:
+            formData.sessions[0]?.morningSession.startTime || "8:00 AM",
+          endDate: eventDate.toLocaleDateString("en-US", {
+            weekday: "short",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           }),
           endTime:
-            formData.sessions[formData.sessions.length - 1]?.eveningSession.endTime || '5:00 PM',
+            formData.sessions[formData.sessions.length - 1]?.eveningSession
+              .endTime || "5:00 PM",
           venues: [formData.location],
         };
 
@@ -126,52 +132,61 @@ export const EditEventModal: React.FC<EditEventModalProps> = ({
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('Error updating event:', error);
-      showToast('error', 'Failed to update event');
+      console.error("Error updating event:", error);
+      showToast("error", "Failed to update event");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setActiveTab('event-info');
+    setActiveTab("event-info");
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-4xl sm:max-w-2xl max-h-[80vh] flex flex-col overflow-y-auto p-0 gap-0 rounded-lg sm:rounded-xl" showCloseButton={false}>
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent
+        className="flex max-h-[80vh] w-full max-w-4xl flex-col gap-0 overflow-y-auto rounded-lg p-0 sm:max-w-2xl sm:rounded-xl"
+        showCloseButton={false}
+      >
+        <DialogHeader className="border-b px-6 py-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold leading-6">Edit Event</DialogTitle>
+            <DialogTitle className="text-xl leading-6 font-semibold">
+              Edit Event
+            </DialogTitle>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={handleCancel}
-              className="h-8 w-8 flex items-center justify-center rounded-full cursor-pointer"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-6 py-0 h-auto">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <TabsList className="h-auto w-full justify-start rounded-none border-b bg-transparent px-6 py-0">
             <TabsTrigger
               value="event-info"
-              className="rounded-none cursor-pointer border-b-2 border-transparent  data-[state=active]:bg-transparent data-[state=active]:text-[#1C9DDE] data-[state=active]:shadow-none px-4 py-3"
+              className="cursor-pointer rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:bg-transparent data-[state=active]:text-[#1C9DDE] data-[state=active]:shadow-none"
             >
               Event Info
             </TabsTrigger>
             <TabsTrigger
               value="session-setup"
-              className="rounded-none cursor-pointer border-b-2 border-blue border-transparent data-[state=active]:border-b[#1C9DDE] data-[state=active]:bg-transparent data-[state=active]:text-[#1C9DDE] data-[state=active]:shadow-none px-4 py-3"
+              className="border-blue data-[state=active]:border-b[#1C9DDE] cursor-pointer rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:bg-transparent data-[state=active]:text-[#1C9DDE] data-[state=active]:shadow-none"
             >
               Session Setup
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
             <TabsContent value="event-info" className="mt-0 h-full">
               <EventInfoTab formData={formData} setFormData={setFormData} />
             </TabsContent>
@@ -181,12 +196,21 @@ export const EditEventModal: React.FC<EditEventModalProps> = ({
             </TabsContent>
           </div>
 
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-background">
-            <Button variant="outline" onClick={handleCancel} className="cursor-pointer" disabled={isLoading}>
+          <div className="bg-background flex items-center justify-end gap-3 border-t px-6 py-4">
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              className="cursor-pointer"
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-              <Button onClick={handleSubmit} className="bg-[#1C9DDE] hover:bg-[#1C9DDE] cursor-pointer" disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save Changes'}
+            <Button
+              onClick={handleSubmit}
+              className="cursor-pointer bg-[#1C9DDE] hover:bg-[#1C9DDE]"
+              disabled={isLoading}
+            >
+              {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </Tabs>

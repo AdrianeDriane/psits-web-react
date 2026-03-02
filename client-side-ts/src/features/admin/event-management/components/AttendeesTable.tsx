@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Download, Plus, Filter } from 'lucide-react';
-import { getAttendees, markAsPresent } from '@/features/events/api/event';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from "react";
+import { Search, Download, Plus, Filter } from "lucide-react";
+import {
+  getAttendees,
+  markAsPresent,
+} from "@/features/events/api/eventService";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -12,7 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -21,16 +24,23 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
-import { FilterSheet, AddAttendeeModal, MarkAttendanceButton, StudentDetailsModal, MarkAttendanceModal, ScanQRModal } from './modals';
-import type { FilterOptions, AttendeeFormData } from './modals';
+} from "@/components/ui/pagination";
+import {
+  FilterSheet,
+  AddAttendeeModal,
+  MarkAttendanceButton,
+  StudentDetailsModal,
+  MarkAttendanceModal,
+  ScanQRModal,
+} from "./modals";
+import type { FilterOptions, AttendeeFormData } from "./modals";
 
 interface Attendee {
   id: string;
   name: string;
   email: string;
   studentId: string;
-  status: 'present' | 'absent';
+  status: "present" | "absent";
   courseYear: string;
   confirmedOn: string;
   confirmedBy: string;
@@ -44,8 +54,11 @@ interface AttendeesTableProps {
   eventId: string;
 }
 
-export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+export const AttendeesTable: React.FC<AttendeesTableProps> = ({
+  venue,
+  eventId,
+}) => {
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -66,16 +79,17 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
   const [attendees, setAttendees] = useState<Attendee[]>(
     Array.from({ length: 50 }, (_, i) => ({
       id: `${i + 1}`,
-      name: 'Jane Lapas Lopez',
-      email: 'lopez.jane@gmail.com',
-      studentId: '23785371',
-      status: i % 5 === 1 ? 'absent' : 'present',
-      courseYear: i % 3 === 0 ? 'BSCS - 2' : i % 3 === 1 ? 'BSIT - 1' : 'BSIT - 3',
-      confirmedOn: i % 5 === 1 ? '--' : 'Nov 20, 2025\n10:31 AM',
-      confirmedBy: i % 5 === 1 ? '--' : 'Anton James...',
-      campus: 'University of Cebu Main Campus',
-      shirtSize: i % 3 === 0 ? 'Medium' : i % 3 === 1 ? 'Large' : 'Small',
-      shirtPrice: '250',
+      name: "Jane Lapas Lopez",
+      email: "lopez.jane@gmail.com",
+      studentId: "23785371",
+      status: i % 5 === 1 ? "absent" : "present",
+      courseYear:
+        i % 3 === 0 ? "BSCS - 2" : i % 3 === 1 ? "BSIT - 1" : "BSIT - 3",
+      confirmedOn: i % 5 === 1 ? "--" : "Nov 20, 2025\n10:31 AM",
+      confirmedBy: i % 5 === 1 ? "--" : "Anton James...",
+      campus: "University of Cebu Main Campus",
+      shirtSize: i % 3 === 0 ? "Medium" : i % 3 === 1 ? "Large" : "Small",
+      shirtPrice: "250",
     }))
   );
 
@@ -83,27 +97,37 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
   useEffect(() => {
     const fetchAttendees = async () => {
       if (!eventId) return;
-      
+
       setIsLoading(true);
       const result = await getAttendees(eventId);
       if (result) {
         // Map API data to Attendee interface
-        const mappedAttendees: Attendee[] = result.attendees.map((attendee: any) => ({
-          id: attendee.id_number,
-          name: attendee.name,
-          email: attendee.email || `${attendee.id_number}@uc.edu.ph`,
-          studentId: attendee.id_number,
-          status: attendee.isPresent ? 'present' : 'absent',
-          courseYear: `${attendee.course} - ${attendee.year}`,
-          confirmedOn: attendee.transactDate 
-            ? new Date(attendee.transactDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + '\n' + 
-              new Date(attendee.transactDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-            : '--',
-          confirmedBy: attendee.transactBy || '--',
-          campus: attendee.campus,
-          shirtSize: attendee.shirtSize,
-          shirtPrice: attendee.shirtPrice?.toString(),
-        }));
+        const mappedAttendees: Attendee[] = result.attendees.map(
+          (attendee: any) => ({
+            id: attendee.id_number,
+            name: attendee.name,
+            email: attendee.email || `${attendee.id_number}@uc.edu.ph`,
+            studentId: attendee.id_number,
+            status: attendee.isPresent ? "present" : "absent",
+            courseYear: `${attendee.course} - ${attendee.year}`,
+            confirmedOn: attendee.transactDate
+              ? new Date(attendee.transactDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "2-digit",
+                  year: "numeric",
+                }) +
+                "\n" +
+                new Date(attendee.transactDate).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "--",
+            confirmedBy: attendee.transactBy || "--",
+            campus: attendee.campus,
+            shirtSize: attendee.shirtSize,
+            shirtPrice: attendee.shirtPrice?.toString(),
+          })
+        );
         setAttendees(mappedAttendees);
       }
       setIsLoading(false);
@@ -124,28 +148,31 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
     }
 
     // Status filter
-    if (activeFilters.status.length > 0 && !activeFilters.status.includes(attendee.status)) {
+    if (
+      activeFilters.status.length > 0 &&
+      !activeFilters.status.includes(attendee.status)
+    ) {
       return false;
     }
 
     // Course filter
     if (activeFilters.course.length > 0) {
-      const attendeeCourse = attendee.courseYear.split(' - ')[0];
+      const attendeeCourse = attendee.courseYear.split(" - ")[0];
       if (!activeFilters.course.includes(attendeeCourse)) return false;
     }
 
     // Year level filter
     if (activeFilters.yearLevel.length > 0) {
-      const attendeeYear = attendee.courseYear.split(' - ')[1];
+      const attendeeYear = attendee.courseYear.split(" - ")[1];
       if (!activeFilters.yearLevel.includes(attendeeYear)) return false;
     }
 
     // Date filter
-    if (activeFilters.confirmedOn && attendee.confirmedOn !== '--') {
+    if (activeFilters.confirmedOn && attendee.confirmedOn !== "--") {
       const filterDate = activeFilters.confirmedOn.toLocaleDateString();
-      const attendeeDate = attendee.confirmedOn.split('\n')[0];
+      const attendeeDate = attendee.confirmedOn.split("\n")[0];
       // Simple date comparison - you may want to improve this
-      if (!attendeeDate.includes(filterDate.split('/')[0])) return false;
+      if (!attendeeDate.includes(filterDate.split("/")[0])) return false;
     }
 
     return true;
@@ -185,7 +212,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
   };
 
   const handleExportCSV = () => {
-    console.log('Export to CSV');
+    console.log("Export to CSV");
   };
 
   const handleAddAttendee = () => {
@@ -199,10 +226,20 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
       name: `${attendee.firstName} ${attendee.middleName} ${attendee.lastName}`.trim(),
       email: attendee.email,
       studentId: attendee.studentId,
-      status: 'present',
+      status: "present",
       courseYear: `${attendee.course} - ${attendee.yearLevel.charAt(0)}`,
-      confirmedOn: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + '\n' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      confirmedBy: 'Admin',
+      confirmedOn:
+        new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        }) +
+        "\n" +
+        new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      confirmedBy: "Admin",
       campus: attendee.campus,
       shirtSize: attendee.shirtSize,
       shirtPrice: attendee.shirtPrice,
@@ -220,11 +257,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
 
     const student = attendees.find((a) => a.studentId === studentId);
     if (student) {
-      const [course, year] = student.courseYear.split(' - ');
+      const [course, year] = student.courseYear.split(" - ");
       const result = await markAsPresent(
         eventId,
         studentId,
-        student.campus || 'Main Campus',
+        student.campus || "Main Campus",
         course,
         year,
         student.name
@@ -232,11 +269,16 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
 
       if (result) {
         const now = new Date();
-        const timestamp = `${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}\n${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+        const timestamp = `${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}\n${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`;
         setAttendees((prev) =>
           prev.map((a) =>
             a.id === student.id
-              ? { ...a, status: 'present', confirmedOn: timestamp, confirmedBy: 'QR Scanner' }
+              ? {
+                  ...a,
+                  status: "present",
+                  confirmedOn: timestamp,
+                  confirmedBy: "QR Scanner",
+                }
               : a
           )
         );
@@ -267,11 +309,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
 
     const student = attendees.find((a) => a.id === attendeeId);
     if (student) {
-      const [course, year] = student.courseYear.split(' - ');
+      const [course, year] = student.courseYear.split(" - ");
       const result = await markAsPresent(
         eventId,
         attendeeId,
-        student.campus || 'Main Campus',
+        student.campus || "Main Campus",
         course,
         year,
         student.name
@@ -283,19 +325,19 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
             attendee.id === attendeeId
               ? {
                   ...attendee,
-                  status: 'present',
+                  status: "present",
                   confirmedOn:
-                    new Date().toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: '2-digit',
-                      year: 'numeric',
+                    new Date().toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "2-digit",
+                      year: "numeric",
                     }) +
-                    '\n' +
-                    new Date().toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
+                    "\n" +
+                    new Date().toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
                     }),
-                  confirmedBy: 'Admin',
+                  confirmedBy: "Admin",
                 }
               : attendee
           )
@@ -317,10 +359,15 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
       {/* Venue Title */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold">{venue}</h3>
-        <div className="flex flex-row items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+        <div className="mt-2 flex w-full flex-row items-center gap-2 sm:mt-0 sm:w-auto">
           <div className="flex-1 sm:flex-none">
-            <Button variant="outline" size="sm" onClick={handleAddAttendee} className="w-full rounded-xl cursor-pointer">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddAttendee}
+              className="w-full cursor-pointer rounded-xl"
+            >
+              <Plus className="mr-2 h-4 w-4" />
               Add Attendee
             </Button>
           </div>
@@ -336,8 +383,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
 
       {/* Search and Actions */}
       <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative max-w-sm flex-1">
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             type="search"
             placeholder="Search"
@@ -350,26 +397,39 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleFilter} className="rounded-xl cursor-pointer">
-            <Filter className="h-4 w-4 mr-2" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleFilter}
+            className="cursor-pointer rounded-xl"
+          >
+            <Filter className="mr-2 h-4 w-4" />
             Filter
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportCSV} className="rounded-xl cursor-pointer">
-            <Download className="h-4 w-4 mr-2" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="cursor-pointer rounded-xl"
+          >
+            <Download className="mr-2 h-4 w-4" />
             Export to CSV
           </Button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="overflow-hidden rounded-lg border">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="w-12">
                   <Checkbox
-                    checked={paginatedAttendees.length > 0 && selectedAttendees.length === paginatedAttendees.length}
+                    checked={
+                      paginatedAttendees.length > 0 &&
+                      selectedAttendees.length === paginatedAttendees.length
+                    }
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
@@ -385,7 +445,10 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
             <TableBody>
               {paginatedAttendees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                  <TableCell
+                    colSpan={8}
+                    className="text-muted-foreground py-12 text-center"
+                  >
                     No attendees found
                   </TableCell>
                 </TableRow>
@@ -403,33 +466,46 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
                     <TableCell>
                       <div>
                         <p className="font-medium">{attendee.name}</p>
-                        <p className="text-sm text-muted-foreground">{attendee.email}</p>
+                        <p className="text-muted-foreground text-sm">
+                          {attendee.email}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>{attendee.studentId}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={attendee.status === 'present' ? 'default' : 'destructive'}
+                        variant={
+                          attendee.status === "present"
+                            ? "default"
+                            : "destructive"
+                        }
                         className={
-                          attendee.status === 'present'
-                            ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                            : 'bg-red-100 text-red-800 hover:bg-red-100'
+                          attendee.status === "present"
+                            ? "bg-green-100 text-green-800 hover:bg-green-100"
+                            : "bg-red-100 text-red-800 hover:bg-red-100"
                         }
                       >
-                        {attendee.status === 'present' ? 'Present' : 'Absent'}
+                        {attendee.status === "present" ? "Present" : "Absent"}
                       </Badge>
                     </TableCell>
                     <TableCell>{attendee.courseYear}</TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {attendee.confirmedOn.split('\n').map((line, i) => (
-                          <div key={i} className={i === 0 ? 'font-medium' : 'text-muted-foreground'}>
+                        {attendee.confirmedOn.split("\n").map((line, i) => (
+                          <div
+                            key={i}
+                            className={
+                              i === 0 ? "font-medium" : "text-muted-foreground"
+                            }
+                          >
                             {line}
                           </div>
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{attendee.confirmedBy}</TableCell>
+                    <TableCell className="text-sm">
+                      {attendee.confirmedBy}
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
@@ -448,10 +524,10 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
       </div>
 
       {/* Footer with pagination and count */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <p className="text-sm text-muted-foreground">
-          Showing {totalAttendees > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, totalAttendees)} of{' '}
-          {totalAttendees}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-muted-foreground text-sm">
+          Showing {totalAttendees > 0 ? startIndex + 1 : 0} to{" "}
+          {Math.min(endIndex, totalAttendees)} of {totalAttendees}
         </p>
         <Pagination>
           <PaginationContent>
@@ -462,7 +538,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
                   e.preventDefault();
                   if (currentPage > 1) setCurrentPage(currentPage - 1);
                 }}
-                className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                className={
+                  currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                }
               />
             </PaginationItem>
             {/* Dynamic page numbers */}
@@ -517,7 +595,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({ venue, eventId }
                   e.preventDefault();
                   if (currentPage < totalPages) setCurrentPage(currentPage + 1);
                 }}
-                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                className={
+                  currentPage === totalPages
+                    ? "pointer-events-none opacity-50"
+                    : ""
+                }
               />
             </PaginationItem>
           </PaginationContent>
