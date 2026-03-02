@@ -496,7 +496,7 @@ const EventManagement: React.FC = () => {
                       <div className="space-y-4">
                         <div>
                           <h3 className="mb-3 text-sm font-semibold">
-                            Attendance Date Start and End
+                            Event details & description
                           </h3>
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="flex gap-3">
