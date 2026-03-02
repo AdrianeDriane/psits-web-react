@@ -32,7 +32,7 @@ export const UnderConstruction: React.FC = () => {
 
         <div className="flex flex-col justify-center gap-4 pt-8 sm:flex-row">
           <Link
-            to="/admin"
+            to="/admin/events"
             className="btn btn-primary hover:shadow-primary/25 gap-2 shadow-lg transition-all duration-300 hover:-translate-y-1"
           >
             <Home className="h-5 w-5" />
