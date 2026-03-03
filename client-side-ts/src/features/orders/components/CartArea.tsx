@@ -36,7 +36,7 @@ export const Cart: React.FC = () => {
         sessionStorage.removeItem('buyNowItemId');
         return new Set([preSelected]);
       }
-    } catch (e) {}
+    } catch (e) { }
     return new Set();
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -55,11 +55,11 @@ export const Cart: React.FC = () => {
             if (parsed && (parsed.id_number || parsed.idNumber || parsed.student_id)) {
               return parsed.id_number || parsed.idNumber || parsed.student_id;
             }
-          } catch (e) {}
+          } catch (e) { }
         }
         return v;
       }
-    } catch (e) {}
+    } catch (e) { }
     return null;
   };
 
@@ -128,7 +128,7 @@ export const Cart: React.FC = () => {
 
   if (!items.length) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20 flex items-center justify-center">
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4">
         <div className="text-center">
           <div className="text-6xl mb-4">🛒</div>
           <h2 className="text-2xl font-semibold mb-2">Your cart is empty</h2>
@@ -246,7 +246,7 @@ export const Cart: React.FC = () => {
               </div>
             )}
 
-              <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6">
               <span className="text-sm text-gray-600">Total</span>
               <span className="text-[#1C9DDE] font-bold">₱{
                 items

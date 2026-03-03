@@ -95,7 +95,7 @@ function generateSummary(course: string): string {
 
 export const ResourcesSection: React.FC = () => {
   const years: Resource['year'][] = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
-  const [activeYear, setActiveYear] = useState<Resource['year']>('Third Year');
+  const [activeYear, setActiveYear] = useState<Resource['year']>('First Year');
   const [search, setSearch] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>(search);
   const [page, setPage] = useState<number>(1);

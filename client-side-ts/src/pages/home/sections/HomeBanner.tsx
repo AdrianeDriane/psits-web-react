@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router";
 import {
   Card,
   CardContent,
@@ -27,15 +28,21 @@ export const HomeBanner = () => {
             <Button
               size="lg"
               className="h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto"
+              asChild
             >
-              {homeBannerData.buttons.primary}
+              <Link to="/auth/signup">
+                {homeBannerData.buttons.primary}
+              </Link>
             </Button>
             <Button
               variant="outline"
               size="lg"
               className="h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto"
+              asChild
             >
-              {homeBannerData.buttons.secondary}
+              <Link to="/organizations">
+                {homeBannerData.buttons.secondary}
+              </Link>
             </Button>
           </div>
         </CardContent>
