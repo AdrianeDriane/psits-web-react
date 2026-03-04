@@ -54,7 +54,7 @@ const Orders = () => {
     setIsLoading(true);
     try {
       const data = await getAllPendingOrders();
-
+      console.log(data);
       if (data === 0 || data.length === 0) {
         setOrders([]);
         setFilteredOrders([]);
@@ -266,7 +266,7 @@ const Orders = () => {
                     Name
                   </th>
                   <th className="p-2 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Membership
+                    Discount
                   </th>
                   <th className="p-2 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Total
@@ -274,11 +274,7 @@ const Orders = () => {
                   <th className="p-2 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Date
                   </th>
-                  {selectedTab === "Paid" && (
-                    <th className="p-2 text-left text-xs font-medium text-white  uppercase tracking-wider">
-                      Transaction Date
-                    </th>
-                  )}
+                
                   <th className="p-2 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Status
                   </th>
@@ -330,21 +326,32 @@ const Orders = () => {
                           </div>
                         </td>
                         <td className="p-2 text-sm text-gray-500">
-                          {order.membership_discount
-                            ? "Discounted"
-                            : "No Discount"}
+                      {order.membership_discount ? ("Member Discount") : order.promo?.promo_discount ? (
+                            <>
+                              <div>Promo Discount</div>
+                              <div className="text-xs text-gray-400">
+                                {order.promo?.promo_name}
+                              </div>
+                            </>
+                          ) : (
+                            "No Discount"
+                          )}
                         </td>
                         <td className="p-2 text-sm text-gray-500">
                           ₱{order.total}
                         </td>
-                        <td className="p-2 text-sm text-gray-500">
-                          {formattedDate(order.order_date)}
+                        <td className="p-2 text-sm text-gray-500 ">
+                            
+                          Order Date: {formattedDate(order.order_date)}
+                          {order.order_status === "Paid" && (
+                            <>
+                              <br/>
+                           Paid Date:  {formattedDate(order.transaction_date)}
+                            </>
+                            )}
+                        
                         </td>
-                        {order.order_status === "Paid" && (
-                          <td className="p-2 text-sm text-gray-500">
-                            {formattedDate(order.transaction_date)}
-                          </td>
-                        )}
+                      
                         <td className="p-2 text-sm">
                           <span
                             className={`px-3 py-1 rounded-full ${
