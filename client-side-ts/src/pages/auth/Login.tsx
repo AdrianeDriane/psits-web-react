@@ -1,8 +1,9 @@
 import { LoginForm, useAuth, type LoginCredentials } from "@/features/auth";
 import sidePhoto from "@/assets/side_photo_forms.png";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { useEffect, useState } from "react";
 import { showToast } from "@/utils/alertHelper";
+import { ArrowLeft } from "lucide-react";
 
 export default function Login() {
   const { login, isAuthenticated, user } = useAuth();
@@ -46,7 +47,16 @@ export default function Login() {
   };
 
   return (
-    <div className="flex h-screen w-screen flex-row bg-gray-300">
+    <div className="relative flex h-screen w-screen flex-row bg-gray-300">
+      {/* Back to Home */}
+      <Link
+        to="/"
+        className="absolute top-4 left-4 z-50 flex items-center gap-1.5 rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-gray-600 shadow-sm backdrop-blur-sm hover:bg-white hover:text-sky-500 transition-all"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Home
+      </Link>
+
       {/* Left Side: Login Form */}
       <div className="flex w-full items-center justify-center bg-white md:w-1/2">
         <LoginForm onLogin={handleLogin} isSubmitting={isSubmitting} />

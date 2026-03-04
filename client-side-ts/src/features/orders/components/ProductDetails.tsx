@@ -195,7 +195,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   );
 };
 
-export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, onBack }) => {
+export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, onBack: _ }) => {
   const { id } = useParams(); 
   const navigate = useNavigate();
   const location = useLocation();

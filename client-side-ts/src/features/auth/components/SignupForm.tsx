@@ -357,7 +357,7 @@ export default function SignupForm({
           </FieldGroup>
         </form>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex justify-center">
         <p className="mt-2 flex w-full flex-row items-center justify-center text-sm font-extralight text-gray-300">
           Remember your password?&nbsp;
           <Link to="/auth/login" className="text-black">

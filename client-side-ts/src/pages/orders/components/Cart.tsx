@@ -1,4 +1,4 @@
-import React from 'react';
+
 import Carts from '@/features/orders/components/CartArea';
 
 export const Cart = () => {
