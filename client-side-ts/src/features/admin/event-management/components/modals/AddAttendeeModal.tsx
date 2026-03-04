@@ -47,11 +47,92 @@ const COURSE_OPTIONS = ["BSIT", "BSCS", "ACT"];
 const YEAR_LEVEL_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 const REQUIRED_MESSAGE = "This field is required";
 
+// Validation constants
+const NAME_REGEX = /^[a-zA-ZÀ-ÿ\s'.,-]+$/;
+const NAME_MIN_LENGTH = 2;
+const NAME_MAX_LENGTH = 50;
+const EMAIL_REGEX =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_UPPERCASE_REGEX = /[A-Z]/;
+const PASSWORD_LOWERCASE_REGEX = /[a-z]/;
+const PASSWORD_NUMBER_REGEX = /[0-9]/;
+const PASSWORD_SYMBOL_REGEX = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
+
 type FormErrors = Partial<Record<keyof AttendeeFormData, string>>;
 
 const shouldShowShirtFields = (merch?: EventMerchMeta | null): boolean => {
   if (!merch) return false;
   return merch.category === "ict-congress" && merch.type === "Tshirt w/ Bundle";
+};
+
+// Validation helper functions
+const validateName = (
+  value: string,
+  fieldLabel: string,
+  isRequired: boolean = true
+): string | undefined => {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return isRequired ? REQUIRED_MESSAGE : undefined;
+  }
+
+  if (trimmed.length < NAME_MIN_LENGTH) {
+    return `${fieldLabel} must be at least ${NAME_MIN_LENGTH} characters`;
+  }
+
+  if (trimmed.length > NAME_MAX_LENGTH) {
+    return `${fieldLabel} must not exceed ${NAME_MAX_LENGTH} characters`;
+  }
+
+  if (!NAME_REGEX.test(trimmed)) {
+    return `${fieldLabel} contains invalid characters`;
+  }
+
+  return undefined;
+};
+
+const validateEmail = (value: string): string | undefined => {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return REQUIRED_MESSAGE;
+  }
+
+  if (!EMAIL_REGEX.test(trimmed)) {
+    return "Please enter a valid email address";
+  }
+
+  return undefined;
+};
+
+const validatePassword = (value: string): string | undefined => {
+  if (!value) {
+    return REQUIRED_MESSAGE;
+  }
+
+  if (value.length < PASSWORD_MIN_LENGTH) {
+    return `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
+  }
+
+  if (!PASSWORD_UPPERCASE_REGEX.test(value)) {
+    return "Password must include at least 1 uppercase letter";
+  }
+
+  if (!PASSWORD_LOWERCASE_REGEX.test(value)) {
+    return "Password must include at least 1 lowercase letter";
+  }
+
+  if (!PASSWORD_NUMBER_REGEX.test(value)) {
+    return "Password must include at least 1 number";
+  }
+
+  if (!PASSWORD_SYMBOL_REGEX.test(value)) {
+    return "Password must include at least 1 symbol (e.g., #, -, @)";
+  }
+
+  return undefined;
 };
 
 export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
@@ -145,16 +226,32 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
       nextErrors.studentId = REQUIRED_MESSAGE;
     }
 
-    if (!formData.firstName.trim()) {
-      nextErrors.firstName = REQUIRED_MESSAGE;
+    // First Name validation
+    const firstNameError = validateName(formData.firstName, "First name", true);
+    if (firstNameError) {
+      nextErrors.firstName = firstNameError;
     }
 
-    if (!formData.lastName.trim()) {
-      nextErrors.lastName = REQUIRED_MESSAGE;
+    // Middle Name validation (optional)
+    const middleNameError = validateName(
+      formData.middleName,
+      "Middle name",
+      false
+    );
+    if (middleNameError) {
+      nextErrors.middleName = middleNameError;
     }
 
-    if (!formData.email.trim()) {
-      nextErrors.email = REQUIRED_MESSAGE;
+    // Last Name validation
+    const lastNameError = validateName(formData.lastName, "Last name", true);
+    if (lastNameError) {
+      nextErrors.lastName = lastNameError;
+    }
+
+    // Email validation
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      nextErrors.email = emailError;
     }
 
     if (!formData.campus.trim()) {
@@ -173,19 +270,16 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
       nextErrors.shirtSize = REQUIRED_MESSAGE;
     }
 
-    if (!formData.password.trim()) {
-      nextErrors.password = REQUIRED_MESSAGE;
+    // Password validation
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      nextErrors.password = passwordError;
     }
 
-    if (!formData.confirmPassword.trim()) {
+    // Confirm Password validation
+    if (!formData.confirmPassword) {
       nextErrors.confirmPassword = REQUIRED_MESSAGE;
-    }
-
-    if (
-      formData.password.trim() &&
-      formData.confirmPassword.trim() &&
-      formData.password !== formData.confirmPassword
-    ) {
+    } else if (formData.password !== formData.confirmPassword) {
       nextErrors.confirmPassword = "Passwords do not match";
     }
 
@@ -285,6 +379,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                   placeholder="Enter first name"
                   value={formData.firstName}
                   onChange={(e) => handleChange("firstName", e.target.value)}
+                  maxLength={NAME_MAX_LENGTH}
                 />
                 {errors.firstName ? (
                   <p className="text-destructive mt-1 text-xs">
@@ -294,14 +389,23 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
               </div>
               <div>
                 <Label htmlFor="middleName" className="mb-2">
-                  Middle Name
+                  Middle Name{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (Optional)
+                  </span>
                 </Label>
                 <Input
                   id="middleName"
                   placeholder="Enter middle name"
                   value={formData.middleName}
                   onChange={(e) => handleChange("middleName", e.target.value)}
+                  maxLength={NAME_MAX_LENGTH}
                 />
+                {errors.middleName ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.middleName}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <Label htmlFor="lastName" className="mb-2">
@@ -312,6 +416,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                   placeholder="Enter last name"
                   value={formData.lastName}
                   onChange={(e) => handleChange("lastName", e.target.value)}
+                  maxLength={NAME_MAX_LENGTH}
                 />
                 {errors.lastName ? (
                   <p className="text-destructive mt-1 text-xs">
@@ -493,6 +598,9 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                     {errors.password}
                   </p>
                 ) : null}
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Min. 8 characters with uppercase, lowercase, number & symbol
+                </p>
               </div>
               <div>
                 <Label htmlFor="confirmPassword" className="mb-2">
