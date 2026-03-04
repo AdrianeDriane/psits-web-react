@@ -38,6 +38,7 @@ import type {
   AttendeesPagination,
   GetAttendeesParams,
 } from "@/features/events/types/event.types";
+import { CampusView } from "@/components/common/CampusView";
 
 interface Attendee {
   id: string;
@@ -344,17 +345,22 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold">{venue}</h3>
         <div className="mt-2 flex w-full flex-row items-center gap-2 sm:mt-0 sm:w-auto">
-          <div className="flex-1 sm:flex-none">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddAttendee}
-              className="w-full cursor-pointer rounded-xl"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Attendee
-            </Button>
-          </div>
+          <CampusView
+            allowedCampuses={["UC-LM", "UC-PT", "UC-Banilad"]}
+            role="Admin"
+          >
+            <div className="flex-1 sm:flex-none">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddAttendee}
+                className="w-full cursor-pointer rounded-xl"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Attendee
+              </Button>
+            </div>
+          </CampusView>
           <div className="flex-1 sm:flex-none">
             <MarkAttendanceButton
               className="w-full"
