@@ -68,7 +68,20 @@ export interface Attendee {
   campus: string;
   course: string;
   year: number;
-  attendance?: Record<string, unknown>;
+  attendance?: {
+    morning?: {
+      attended?: boolean;
+      timestamp?: string | Date | null;
+    };
+    afternoon?: {
+      attended?: boolean;
+      timestamp?: string | Date | null;
+    };
+    evening?: {
+      attended?: boolean;
+      timestamp?: string | Date | null;
+    };
+  };
   confirmedBy?: string;
   shirtSize?: string;
   shirtPrice?: number;
@@ -99,10 +112,15 @@ export interface GetAttendeesParams {
   limit?: number;
   search?: string;
   campus?: string;
-  status?: Array<"present" | "absent">;
+  attendanceStatus?: Array<
+    | "morning_attended"
+    | "afternoon_attended"
+    | "evening_attended"
+    | "no_sessions_attended"
+  >;
   course?: string[];
-  yearLevel?: string[];
-  confirmedOn?: string;
+  yearLevel?: number[];
+  registeredOn?: string;
 }
 
 export interface AttendeesPagination {

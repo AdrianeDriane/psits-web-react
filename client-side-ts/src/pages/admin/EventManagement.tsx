@@ -251,7 +251,7 @@ const EventManagement: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(
     hasValidRouteEventId ? null : "Missing event ID from route."
   );
-  const [activeCampus, setActiveCampus] = useState<Campus>(DEFAULT_CAMPUSES[0]);
+  const [activeCampus, setActiveCampus] = useState<Campus | "all">("all");
   const [isAttendeeSettingsOpen, setIsAttendeeSettingsOpen] = useState(false);
   const [isEditEventOpen, setIsEditEventOpen] = useState(false);
 
@@ -282,12 +282,17 @@ const EventManagement: React.FC = () => {
     return [userCampus];
   }, [eventDetails?.campusCodes, isAdmin, isUcMainAdmin, user?.campus]);
 
-  const activeCampusValue = availableCampusCodes.includes(activeCampus)
-    ? activeCampus
-    : availableCampusCodes[0];
+  const activeCampusValue =
+    activeCampus === "all"
+      ? "all"
+      : availableCampusCodes.includes(activeCampus)
+        ? activeCampus
+        : availableCampusCodes[0];
 
   const handleCampusChange = (campusCode: string) => {
-    if (campusCode in CAMPUS_CODE_TO_NAME) {
+    if (campusCode === "all") {
+      setActiveCampus("all");
+    } else if (campusCode in CAMPUS_CODE_TO_NAME) {
       setActiveCampus(campusCode as Campus);
     }
   };
@@ -643,6 +648,12 @@ const EventManagement: React.FC = () => {
                       }}
                     >
                       <TabsList className="inline-flex w-max gap-2 rounded-none bg-transparent px-2">
+                        <TabsTrigger
+                          value="all"
+                          className="mx-1 cursor-pointer rounded-none !bg-transparent px-4 py-3 whitespace-nowrap hover:bg-transparent focus:bg-transparent data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[#1C9DDE] data-[state=active]:underline data-[state=active]:decoration-[#1C9DDE] data-[state=active]:decoration-2 data-[state=active]:underline-offset-11"
+                        >
+                          All Campuses
+                        </TabsTrigger>
                         {availableCampusCodes.map((campusCode) => (
                           <TabsTrigger
                             key={campusCode}
@@ -671,6 +682,16 @@ const EventManagement: React.FC = () => {
                     </button>
                   </div>
 
+                  <TabsContent value="all" className="mt-6">
+                    <AttendeesTable
+                      venue="All Campuses"
+                      eventId={eventDetails.id}
+                      campusCode="all"
+                      adminCampus={user?.campus}
+                      merch={eventDetails.merch}
+                      eventStatus={eventDetails.status}
+                    />
+                  </TabsContent>
                   {availableCampusCodes.map((campusCode) => (
                     <TabsContent
                       key={campusCode}
@@ -683,6 +704,7 @@ const EventManagement: React.FC = () => {
                         campusCode={campusCode}
                         adminCampus={user?.campus}
                         merch={eventDetails.merch}
+                        eventStatus={eventDetails.status}
                       />
                     </TabsContent>
                   ))}

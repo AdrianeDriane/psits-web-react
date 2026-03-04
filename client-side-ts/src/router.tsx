@@ -55,6 +55,7 @@ const router = createBrowserRouter([
             children: [
               { index: true, Component: AccountSettings },
               { path: "event-attendance", Component: EventAttendance },
+              { path: "account-settings", Component: AccountSettings },
               {
                 element: (
                   <StudentCampusRouteGuard allowedCampuses={["UC-Main"]} />

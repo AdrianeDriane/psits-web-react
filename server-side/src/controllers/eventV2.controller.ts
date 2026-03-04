@@ -31,17 +31,21 @@ const buildEventLookupQuery = (eventId: string) => {
   };
 };
 
-type AttendeeStatusFilter = "present" | "absent";
+type AttendeeAttendanceFilter =
+  | "morning_attended"
+  | "afternoon_attended"
+  | "evening_attended"
+  | "no_sessions_attended";
 
 interface AttendeeQueryParams {
   page: number;
   limit: number;
   search?: string;
   campus?: string;
-  status?: AttendeeStatusFilter[];
+  attendanceStatus?: AttendeeAttendanceFilter[];
   course?: string[];
   yearLevel?: number[];
-  confirmedOn?: string;
+  registeredOn?: string;
 }
 
 const DEFAULT_PAGE = 1;
@@ -78,15 +82,20 @@ const parseCsvString = (value: unknown): string[] | undefined => {
   return values.length > 0 ? values : undefined;
 };
 
-const parseStatusFilter = (
+const parseAttendanceStatusFilter = (
   value: unknown
-): AttendeeStatusFilter[] | undefined => {
+): AttendeeAttendanceFilter[] | undefined => {
   const values = parseCsvString(value);
   if (!values) return undefined;
 
-  const allowed: AttendeeStatusFilter[] = ["present", "absent"];
-  const filtered = values.filter((item): item is AttendeeStatusFilter =>
-    allowed.includes(item as AttendeeStatusFilter)
+  const allowed: AttendeeAttendanceFilter[] = [
+    "morning_attended",
+    "afternoon_attended",
+    "evening_attended",
+    "no_sessions_attended",
+  ];
+  const filtered = values.filter((item): item is AttendeeAttendanceFilter =>
+    allowed.includes(item as AttendeeAttendanceFilter)
   );
 
   return filtered.length > 0 ? filtered : undefined;
@@ -103,7 +112,7 @@ const parseYearLevelFilter = (value: unknown): number[] | undefined => {
   return years.length > 0 ? years : undefined;
 };
 
-const parseConfirmedOn = (value: unknown): string | undefined => {
+const parseRegisteredOn = (value: unknown): string | undefined => {
   if (typeof value !== "string" || !value.trim()) return undefined;
 
   const parsed = new Date(value);
@@ -126,10 +135,14 @@ const normalizeAttendeeQueryParams = (req: Request): AttendeeQueryParams => {
       typeof req.query.campus === "string" && req.query.campus.trim().length > 0
         ? req.query.campus.trim()
         : undefined,
-    status: parseStatusFilter(req.query.status),
+    attendanceStatus: parseAttendanceStatusFilter(
+      req.query.attendanceStatus ?? req.query.status
+    ),
     course: parseCsvString(req.query.course),
     yearLevel: parseYearLevelFilter(req.query.yearLevel),
-    confirmedOn: parseConfirmedOn(req.query.confirmedOn),
+    registeredOn: parseRegisteredOn(
+      req.query.registeredOn ?? req.query.confirmedOn
+    ),
   };
 };
 
@@ -140,6 +153,29 @@ const isAttendeePresent = (attendee: IAttendee): boolean => {
   return [attendance.morning, attendance.afternoon, attendance.evening].some(
     (session) => Boolean(session?.attended)
   );
+};
+
+const getAttendeeAttendanceStatuses = (
+  attendee: IAttendee
+): AttendeeAttendanceFilter[] => {
+  const statuses: AttendeeAttendanceFilter[] = [];
+  const attendance = attendee.attendance;
+
+  if (attendance?.morning?.attended) {
+    statuses.push("morning_attended");
+  }
+  if (attendance?.afternoon?.attended) {
+    statuses.push("afternoon_attended");
+  }
+  if (attendance?.evening?.attended) {
+    statuses.push("evening_attended");
+  }
+
+  if (statuses.length === 0) {
+    statuses.push("no_sessions_attended");
+  }
+
+  return statuses;
 };
 
 const isSameDay = (
@@ -173,11 +209,13 @@ const filterAttendees = (
       if (!matchesSearch) return false;
     }
 
-    if (params.status && params.status.length > 0) {
-      const statusValue: AttendeeStatusFilter = isAttendeePresent(attendee)
-        ? "present"
-        : "absent";
-      if (!params.status.includes(statusValue)) {
+    if (params.attendanceStatus && params.attendanceStatus.length > 0) {
+      const attendeeStatuses = getAttendeeAttendanceStatuses(attendee);
+      const matchesAttendanceStatus = params.attendanceStatus.some((status) =>
+        attendeeStatuses.includes(status)
+      );
+
+      if (!matchesAttendanceStatus) {
         return false;
       }
     }
@@ -194,8 +232,8 @@ const filterAttendees = (
       }
     }
 
-    if (params.confirmedOn) {
-      if (!isSameDay(attendee.transactDate, params.confirmedOn)) {
+    if (params.registeredOn) {
+      if (!isSameDay(attendee.transactDate, params.registeredOn)) {
         return false;
       }
     }
@@ -458,6 +496,7 @@ const V_PWD_MIN = 8;
 const V_STUDENT_ID_REGEX = /^\d{8}$/;
 const V_VALID_COURSES = ["BSIT", "BSCS", "ACT"];
 const V_VALID_CAMPUSES = ["UC-Banilad", "UC-LM", "UC-PT"];
+const V_DISABLED_ADD_ATTENDEE_CAMPUSES = ["UC-Main", "UC-CS"];
 
 const CAMPUS_ID_SUFFIX: Record<string, string> = {
   "UC-Banilad": "ucb",
@@ -578,6 +617,13 @@ export const addAttendeeV2Controller = async (req: Request, res: Response) => {
     }
 
     const adminCampus = claims.campus;
+    if (V_DISABLED_ADD_ATTENDEE_CAMPUSES.includes(adminCampus)) {
+      return res.status(403).json({
+        error: "INSUFFICIENT_PERMISSIONS",
+        message: `Adding attendees via V2 is not allowed for ${adminCampus}`,
+      });
+    }
+
     if (!V_VALID_CAMPUSES.includes(adminCampus)) {
       return res.status(400).json({
         error: "INVALID_CAMPUS",

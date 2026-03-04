@@ -17,7 +17,7 @@ interface StudentDetailsModalProps {
     name: string;
     email: string;
     studentId: string;
-    status: "present" | "absent";
+    status?: string;
     courseYear: string;
     campus?: string;
     shirtSize?: string;
@@ -56,19 +56,12 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
         <div className="space-y-4 px-6 py-6">
           {/* Status */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Status</span>
-            <Badge
-              variant={student.status === "present" ? "default" : "destructive"}
-              className={
-                student.status === "present"
-                  ? "bg-green-100 text-green-800 hover:bg-green-100"
-                  : "bg-red-100 text-red-800 hover:bg-red-100"
-              }
-            >
-              {student.status === "present" ? "Present" : "Absent"}
-            </Badge>
-          </div>
+          {student.status && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">Status</span>
+              <Badge variant="outline">{student.status}</Badge>
+            </div>
+          )}
 
           {/* Student ID */}
           <div className="flex items-center justify-between">

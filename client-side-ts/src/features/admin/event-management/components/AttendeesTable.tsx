@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Search, Download, Plus, Filter } from "lucide-react";
-import {
-  getAttendees,
-  markAsPresent,
-} from "@/features/events/api/eventService";
+import { getAttendees } from "@/features/events/api/eventService";
+import { showToast } from "@/utils/alertHelper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -30,8 +27,7 @@ import {
   AddAttendeeModal,
   MarkAttendanceButton,
   StudentDetailsModal,
-  MarkAttendanceModal,
-  ScanQRModal,
+  AttendanceStatusModal,
 } from "./modals";
 import type { FilterOptions, AttendeeFormData } from "./modals";
 import type {
@@ -46,10 +42,23 @@ interface Attendee {
   name: string;
   email: string;
   studentId: string;
-  status: "present" | "absent";
+  attendance?: {
+    morning?: {
+      attended?: boolean;
+      timestamp?: string | Date | null;
+    };
+    afternoon?: {
+      attended?: boolean;
+      timestamp?: string | Date | null;
+    };
+    evening?: {
+      attended?: boolean;
+      timestamp?: string | Date | null;
+    };
+  };
   courseYear: string;
-  confirmedOn: string;
-  confirmedBy: string;
+  registeredOn: string;
+  registeredBy: string;
   campus?: string;
   shirtSize?: string;
   shirtPrice?: string;
@@ -58,9 +67,10 @@ interface Attendee {
 interface AttendeesTableProps {
   venue: string;
   eventId: string;
-  campusCode: string;
+  campusCode: string | "all";
   adminCampus?: string;
   merch?: EventMerchMeta | null;
+  eventStatus?: "ongoing" | "ended" | "upcoming";
 }
 
 export const AttendeesTable: React.FC<AttendeesTableProps> = ({
@@ -69,6 +79,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   campusCode,
   adminCampus,
   merch,
+  eventStatus,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -78,9 +89,10 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAddAttendeeOpen, setIsAddAttendeeOpen] = useState(false);
   const [isStudentDetailsOpen, setIsStudentDetailsOpen] = useState(false);
-  const [isMarkAttendanceOpen, setIsMarkAttendanceOpen] = useState(false);
-  const [isScanQROpen, setIsScanQROpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Attendee | null>(null);
+  const [isAttendanceStatusOpen, setIsAttendanceStatusOpen] = useState(false);
+  const [selectedAttendanceAttendee, setSelectedAttendanceAttendee] =
+    useState<Attendee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<AttendeesPagination>({
@@ -92,10 +104,10 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     hasPreviousPage: false,
   });
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({
-    status: [],
+    attendanceStatus: [],
     course: [],
     yearLevel: [],
-    confirmedOn: undefined,
+    registeredOn: undefined,
   });
 
   const [attendees, setAttendees] = useState<Attendee[]>([]);
@@ -124,18 +136,20 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
       const params: GetAttendeesParams = {
         page: currentPage,
         limit: pagination.limit,
-        campus: campusCode,
+        campus: campusCode === "all" ? undefined : campusCode,
         search: debouncedSearchQuery || undefined,
-        status:
-          activeFilters.status.length > 0 ? activeFilters.status : undefined,
+        attendanceStatus:
+          activeFilters.attendanceStatus.length > 0
+            ? activeFilters.attendanceStatus
+            : undefined,
         course:
           activeFilters.course.length > 0 ? activeFilters.course : undefined,
         yearLevel:
           activeFilters.yearLevel.length > 0
             ? activeFilters.yearLevel
             : undefined,
-        confirmedOn: activeFilters.confirmedOn
-          ? activeFilters.confirmedOn.toISOString().slice(0, 10)
+        registeredOn: activeFilters.registeredOn
+          ? activeFilters.registeredOn.toISOString().slice(0, 10)
           : undefined,
       };
 
@@ -152,9 +166,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
               ? attendee.email
               : `${attendee.id_number}@uc.edu.ph`,
           studentId: attendee.id_number,
-          status: attendee.isPresent ? "present" : "absent",
+          attendance: attendee.attendance,
           courseYear: `${attendee.course} - ${attendee.year}`,
-          confirmedOn: attendee.transactDate
+          registeredOn: attendee.transactDate
             ? new Date(attendee.transactDate).toLocaleDateString("en-US", {
                 month: "short",
                 day: "2-digit",
@@ -166,7 +180,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
                 minute: "2-digit",
               })
             : "--",
-          confirmedBy: attendee.transactBy || "--",
+          registeredBy: attendee.transactBy || "--",
           campus: attendee.campus,
           shirtSize: attendee.shirtSize,
           shirtPrice: attendee.shirtPrice?.toString(),
@@ -235,7 +249,61 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   };
 
   const handleExportCSV = () => {
-    console.warn("Export to CSV");
+    if (attendees.length === 0) {
+      showToast("warning", "No attendees to export");
+      return;
+    }
+
+    const headers = [
+      "Student ID",
+      "Name",
+      "Email",
+      "Campus",
+      "Course",
+      "Year",
+      "Status",
+      "Registered On",
+      "Registered By",
+      "Shirt Size",
+      "Shirt Price",
+    ];
+
+    const rows = attendees.map((attendee) => [
+      attendee.studentId,
+      attendee.name,
+      attendee.email,
+      attendee.campus || "",
+      attendee.courseYear.split(" - ")[0] || "",
+      attendee.courseYear.split(" - ")[1] || "",
+      getAttendanceSummary(attendee.attendance),
+      attendee.registeredOn.replace("\n", " "),
+      attendee.registeredBy,
+      attendee.shirtSize || "",
+      attendee.shirtPrice || "",
+    ]);
+
+    const csvContent = [
+      headers.map((h) => `"${h}"`).join(","),
+      ...rows.map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `attendees-${venue.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast("success", "Attendees exported successfully");
   };
 
   const handleAddAttendee = () => {
@@ -249,9 +317,13 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
       name: `${attendee.firstName} ${attendee.middleName} ${attendee.lastName}`.trim(),
       email: attendee.email,
       studentId: attendee.studentId,
-      status: "present",
+      attendance: {
+        morning: { attended: false, timestamp: null },
+        afternoon: { attended: false, timestamp: null },
+        evening: { attended: false, timestamp: null },
+      },
       courseYear: `${attendee.course} - ${attendee.yearLevel.charAt(0)}`,
-      confirmedOn:
+      registeredOn:
         new Date().toLocaleDateString("en-US", {
           month: "short",
           day: "2-digit",
@@ -262,7 +334,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
           hour: "2-digit",
           minute: "2-digit",
         }),
-      confirmedBy: "Admin",
+      registeredBy: "Admin",
       campus: attendee.campus,
       shirtSize: attendee.shirtSize,
       shirtPrice: attendee.shirtPrice,
@@ -272,68 +344,26 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     setRefreshTick((prev) => prev + 1);
   };
 
-  const handleScanQR = () => {
-    setIsScanQROpen(true);
-  };
+  const isAttendanceAvailable = eventStatus !== "upcoming";
 
-  const handleScanSuccess = async (studentId: string) => {
-    if (!eventId) return;
-
-    const student = attendees.find((a) => a.studentId === studentId);
-    if (student) {
-      const [course, year] = student.courseYear.split(" - ");
-      const result = await markAsPresent(
-        eventId,
-        studentId,
-        student.campus || "Main Campus",
-        course,
-        year,
-        student.name
-      );
-
-      if (result) {
-        setRefreshTick((prev) => prev + 1);
-      }
+  const getAttendanceSummary = (attendance: Attendee["attendance"]) => {
+    if (!isAttendanceAvailable) {
+      return "Not Available Yet";
     }
+
+    const sessions = [
+      attendance?.morning?.attended,
+      attendance?.afternoon?.attended,
+      attendance?.evening?.attended,
+    ];
+    const attendedCount = sessions.filter(Boolean).length;
+
+    return `${attendedCount}/3 Sessions`;
   };
 
-  const handleEnterStudentId = () => {
-    setIsMarkAttendanceOpen(true);
-  };
-
-  const handleSearchStudent = (studentId: string) => {
-    const student = attendees.find((a) => a.studentId === studentId);
-    if (student) {
-      return {
-        id: student.id,
-        name: student.name,
-        email: student.email,
-        studentId: student.studentId,
-        courseYear: student.courseYear,
-      };
-    }
-    return null;
-  };
-
-  const handleMarkPresent = async (attendeeId: string) => {
-    if (!eventId) return;
-
-    const student = attendees.find((a) => a.id === attendeeId);
-    if (student) {
-      const [course, year] = student.courseYear.split(" - ");
-      const result = await markAsPresent(
-        eventId,
-        attendeeId,
-        student.campus || "Main Campus",
-        course,
-        year,
-        student.name
-      );
-
-      if (result) {
-        setRefreshTick((prev) => prev + 1);
-      }
-    }
+  const openAttendanceStatus = (attendee: Attendee) => {
+    setSelectedAttendanceAttendee(attendee);
+    setIsAttendanceStatusOpen(true);
   };
 
   const handleViewDetails = (attendeeId: string) => {
@@ -369,8 +399,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
           <div className="flex-1 sm:flex-none">
             <MarkAttendanceButton
               className="w-full"
-              onScanQR={handleScanQR}
-              onEnterStudentId={handleEnterStudentId}
+              onScanQR={() => undefined}
+              onEnterStudentId={() => undefined}
             />
           </div>
         </div>
@@ -432,8 +462,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
                 <TableHead className="min-w-[120px]">Student ID</TableHead>
                 <TableHead className="min-w-[100px]">Status</TableHead>
                 <TableHead className="min-w-[120px]">Course & Year</TableHead>
-                <TableHead className="min-w-[150px]">Confirmed on</TableHead>
-                <TableHead className="min-w-[150px]">Confirmed by</TableHead>
+                <TableHead className="min-w-[150px]">Registered On</TableHead>
+                <TableHead className="min-w-[150px]">Registered By</TableHead>
                 <TableHead className="w-[120px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -483,25 +513,19 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
                     </TableCell>
                     <TableCell>{attendee.studentId}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          attendee.status === "present"
-                            ? "default"
-                            : "destructive"
-                        }
-                        className={
-                          attendee.status === "present"
-                            ? "bg-green-100 text-green-800 hover:bg-green-100"
-                            : "bg-red-100 text-red-800 hover:bg-red-100"
-                        }
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openAttendanceStatus(attendee)}
+                        className="rounded-full"
                       >
-                        {attendee.status === "present" ? "Present" : "Absent"}
-                      </Badge>
+                        {getAttendanceSummary(attendee.attendance)}
+                      </Button>
                     </TableCell>
                     <TableCell>{attendee.courseYear}</TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {attendee.confirmedOn.split("\n").map((line, i) => (
+                        {attendee.registeredOn.split("\n").map((line, i) => (
                           <div
                             key={i}
                             className={
@@ -514,7 +538,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {attendee.confirmedBy}
+                      {attendee.registeredBy}
                     </TableCell>
                     <TableCell>
                       <Button
@@ -637,16 +661,12 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         onOpenChange={setIsStudentDetailsOpen}
         student={selectedStudent}
       />
-      <MarkAttendanceModal
-        open={isMarkAttendanceOpen}
-        onOpenChange={setIsMarkAttendanceOpen}
-        onMarkPresent={handleMarkPresent}
-        onSearchStudent={handleSearchStudent}
-      />
-      <ScanQRModal
-        open={isScanQROpen}
-        onOpenChange={setIsScanQROpen}
-        onScanSuccess={handleScanSuccess}
+      <AttendanceStatusModal
+        open={isAttendanceStatusOpen}
+        onOpenChange={setIsAttendanceStatusOpen}
+        attendeeName={selectedAttendanceAttendee?.name ?? ""}
+        attendance={selectedAttendanceAttendee?.attendance}
+        isAttendanceAvailable={isAttendanceAvailable}
       />
     </div>
   );
