@@ -152,9 +152,25 @@ export const getAttendees = async (
       return false;
     }
 
+    const normalizedParams = {
+      ...params,
+      attendanceStatus:
+        params.attendanceStatus && params.attendanceStatus.length > 0
+          ? params.attendanceStatus.join(",")
+          : undefined,
+      course:
+        params.course && params.course.length > 0
+          ? params.course.join(",")
+          : undefined,
+      yearLevel:
+        params.yearLevel && params.yearLevel.length > 0
+          ? params.yearLevel.join(",")
+          : undefined,
+    };
+
     const response = await api.get<PaginatedAttendeesResponse>(
       `/api/v2/events/${eventId}/attendees`,
-      { params }
+      { params: normalizedParams }
     );
 
     return response.data;

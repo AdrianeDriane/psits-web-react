@@ -683,6 +683,7 @@ const EventManagement: React.FC = () => {
                         campusCode={campusCode}
                         adminCampus={user?.campus}
                         merch={eventDetails.merch}
+                        eventStatus={eventDetails.status}
                       />
                     </TabsContent>
                   ))}
