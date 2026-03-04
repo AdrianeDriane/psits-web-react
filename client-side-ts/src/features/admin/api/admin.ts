@@ -174,11 +174,6 @@ interface PendingCountsResult {
   limit: number;
 }
 
-interface SortOption {
-  field: string;
-  direction: "asc" | "desc";
-}
-
 interface AdminRequest {
   id_number: string;
   first_name: string;

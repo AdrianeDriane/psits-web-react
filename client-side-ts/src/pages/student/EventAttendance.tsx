@@ -23,7 +23,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogHeader,
-  DialogClose,
 } from '@/components/ui/dialog'
 
 interface EventCardProps {

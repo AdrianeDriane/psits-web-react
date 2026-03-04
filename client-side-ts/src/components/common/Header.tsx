@@ -23,7 +23,7 @@ const navLinks = [
   { name: "Events", href: "/events" },
   { name: "Organizations", href: "/organizations" },
   { name: "Resources", href: "/resources" },
-  { name: "Shop", href: "/shop" },
+  { name: "Shop", href: "/shop", hasDropdown: false },
 ];
 
 export const Header = () => {

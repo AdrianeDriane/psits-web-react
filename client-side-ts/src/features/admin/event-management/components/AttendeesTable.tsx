@@ -67,7 +67,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const [isMarkAttendanceOpen, setIsMarkAttendanceOpen] = useState(false);
   const [isScanQROpen, setIsScanQROpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Attendee | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({
     status: [],
     course: [],

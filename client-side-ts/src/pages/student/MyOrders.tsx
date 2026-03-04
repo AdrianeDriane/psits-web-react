@@ -138,7 +138,7 @@ const EmptyState: React.FC<{
 
 const MyOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [, setLoading] = useState<boolean>(true);
 
   
 

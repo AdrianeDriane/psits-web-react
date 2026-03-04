@@ -40,7 +40,7 @@ const EventManagement: React.FC = () => {
   const eventFromState = location.state?.event;
 
   // Use event data from navigation state or fall back to mock data
-  const [eventDetails, setEventDetails] = useState<EventDetails>({
+  const [eventDetails] = useState<EventDetails>({
     id: eventId || "1",
     title: eventFromState?.title || "60th UC Intramurals",
     status: "ended",

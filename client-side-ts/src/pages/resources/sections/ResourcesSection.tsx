@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useCallback, memo, type ChangeEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import { tutorials } from '@/data/sections-data';
-import { Input } from '@/components/ui/input';
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 import { Badge } from '@/components/ui/badge';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
 import { Card, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
@@ -96,14 +94,13 @@ function generateSummary(course: string): string {
 export const ResourcesSection: React.FC = () => {
   const years: Resource['year'][] = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
   const [activeYear, setActiveYear] = useState<Resource['year']>('First Year');
-  const [search, setSearch] = useState<string>('');
-  const [debouncedSearch, setDebouncedSearch] = useState<string>(search);
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [page, setPage] = useState<number>(1);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    const t = setTimeout(() => setDebouncedSearch(''), 300);
     return () => clearTimeout(t);
-  }, [search]);
+  }, []);
 
   const filtered = DUMMY_RESOURCES.filter((r) => r.year === activeYear && (
     r.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -115,10 +112,7 @@ export const ResourcesSection: React.FC = () => {
   const pageCount = Math.ceil(filtered.length / RES_PER_PAGE);
   const paginatedItems = filtered.slice((page - 1) * RES_PER_PAGE, page * RES_PER_PAGE);
 
-  const handleSearch = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    setPage(1);
-  }, []);
+  // Search handler removed - was declared but not used
 
   return (
     <section className="relative w-full min-h-screen bg-gray-50/20 overflow-visible">

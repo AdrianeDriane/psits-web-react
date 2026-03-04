@@ -1,4 +1,4 @@
-import React from 'react'
+
 import ResourcesSection from '@/pages/resources/sections/ResourcesSection'
 export const Resources = () => {
   return (

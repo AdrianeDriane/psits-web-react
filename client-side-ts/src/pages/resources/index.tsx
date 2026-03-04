@@ -1,4 +1,4 @@
-import React from 'react'
+
 import ResourcesSection from './sections/ResourcesSection';
 export const index = () => {
   return (

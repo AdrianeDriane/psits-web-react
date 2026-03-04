@@ -1,4 +1,4 @@
-import React from 'react';
+
 import OurShop from '@/features/orders/components/OurShop';
 
 export const Shop = () => {
