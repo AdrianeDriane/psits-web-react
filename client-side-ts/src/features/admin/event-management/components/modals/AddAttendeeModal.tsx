@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import {
   Dialog,
@@ -16,14 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addAttendee } from "@/features/events/api/eventService";
 import { showToast } from "@/utils/alertHelper";
+import type { EventMerchMeta } from "@/features/events/types/event.types";
 
 interface AddAttendeeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddAttendee?: (attendee: AttendeeFormData) => void;
   eventId: string;
+  adminCampus?: string;
+  merch?: EventMerchMeta | null;
 }
 
 export interface AttendeeFormData {
@@ -41,22 +43,28 @@ export interface AttendeeFormData {
   confirmPassword: string;
 }
 
-const CAMPUS_OPTIONS = [
-  "Main Campus",
-  "Banilad Campus",
-  "LM Campus",
-  "Maritime Campus",
-];
-const COURSE_OPTIONS = ["BSIT", "BSCS", "ACT", "BLIS"];
+const COURSE_OPTIONS = ["BSIT", "BSCS", "ACT"];
 const YEAR_LEVEL_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
-const SHIRT_SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+const REQUIRED_MESSAGE = "This field is required";
+
+type FormErrors = Partial<Record<keyof AttendeeFormData, string>>;
+
+const shouldShowShirtFields = (merch?: EventMerchMeta | null): boolean => {
+  if (!merch) return false;
+  return merch.category === "ict-congress" && merch.type === "Tshirt w/ Bundle";
+};
 
 export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
   open,
   onOpenChange,
   onAddAttendee,
   eventId,
+  adminCampus,
+  merch,
 }) => {
+  void onAddAttendee;
+  void eventId;
+
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<AttendeeFormData>({
     studentId: "",
@@ -72,88 +80,128 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
     password: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleChange = (field: keyof AttendeeFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const isShirtFieldVisible = useMemo(
+    () => shouldShowShirtFields(merch),
+    [merch]
+  );
 
-  const handleSubmit = async () => {
-    // Validate required fields
-    if (!formData.studentId.trim()) {
-      showToast("error", "Student ID is required");
-      return;
+  const shirtSizeOptions = useMemo(() => {
+    if (!merch?.selectedSizes || typeof merch.selectedSizes !== "object") {
+      return [];
     }
+    return Object.keys(merch.selectedSizes);
+  }, [merch]);
 
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      showToast("error", "First name and last name are required");
-      return;
-    }
+  useEffect(() => {
+    if (!adminCampus) return;
 
-    if (!formData.email.trim()) {
-      showToast("error", "Email is required");
-      return;
-    }
+    setFormData((prev) => ({
+      ...prev,
+      campus: adminCampus,
+    }));
+  }, [adminCampus]);
 
-    if (!formData.campus || !formData.course || !formData.yearLevel) {
-      showToast("error", "Campus, course, and year level are required");
+  useEffect(() => {
+    if (!isShirtFieldVisible) {
+      setFormData((prev) => ({
+        ...prev,
+        shirtSize: "",
+        shirtPrice: "",
+      }));
       return;
     }
 
     if (!formData.shirtSize) {
-      showToast("error", "Shirt size is required");
+      setFormData((prev) => ({
+        ...prev,
+        shirtPrice: "",
+      }));
       return;
     }
 
-    if (!formData.shirtPrice) {
-      showToast("error", "Shirt price is required");
-      return;
+    const selected = merch?.selectedSizes?.[formData.shirtSize];
+    const priceString = selected?.price ? String(selected.price) : "";
+
+    setFormData((prev) => ({
+      ...prev,
+      shirtPrice: priceString,
+    }));
+  }, [formData.shirtSize, isShirtFieldVisible, merch]);
+
+  const handleChange = (field: keyof AttendeeFormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const validateForm = (): boolean => {
+    const nextErrors: FormErrors = {};
+
+    if (!formData.studentId.trim()) {
+      nextErrors.studentId = REQUIRED_MESSAGE;
     }
 
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      showToast("error", "Passwords do not match");
-      return;
+    if (!formData.firstName.trim()) {
+      nextErrors.firstName = REQUIRED_MESSAGE;
+    }
+
+    if (!formData.lastName.trim()) {
+      nextErrors.lastName = REQUIRED_MESSAGE;
+    }
+
+    if (!formData.email.trim()) {
+      nextErrors.email = REQUIRED_MESSAGE;
+    }
+
+    if (!formData.campus.trim()) {
+      nextErrors.campus = REQUIRED_MESSAGE;
+    }
+
+    if (!formData.course.trim()) {
+      nextErrors.course = REQUIRED_MESSAGE;
+    }
+
+    if (!formData.yearLevel.trim()) {
+      nextErrors.yearLevel = REQUIRED_MESSAGE;
+    }
+
+    if (isShirtFieldVisible && !formData.shirtSize.trim()) {
+      nextErrors.shirtSize = REQUIRED_MESSAGE;
     }
 
     if (!formData.password.trim()) {
-      showToast("error", "Password is required");
+      nextErrors.password = REQUIRED_MESSAGE;
+    }
+
+    if (!formData.confirmPassword.trim()) {
+      nextErrors.confirmPassword = REQUIRED_MESSAGE;
+    }
+
+    if (
+      formData.password.trim() &&
+      formData.confirmPassword.trim() &&
+      formData.password !== formData.confirmPassword
+    ) {
+      nextErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (!validateForm()) {
+      showToast("error", "Please complete required fields.");
       return;
     }
 
     setIsLoading(true);
-
     try {
-      // Prepare API payload
-      const attendeeData = {
-        eventId: eventId,
-        attendeeId: formData.studentId,
-        name: `${formData.firstName} ${formData.middleName} ${formData.lastName}`.trim(),
-        email: formData.email,
-        campus: formData.campus,
-        course: formData.course,
-        year: parseInt(formData.yearLevel.charAt(0)),
-        shirtSize: formData.shirtSize,
-        shirtPrice: parseFloat(formData.shirtPrice),
-        password: formData.password,
-      };
-
-      // Call add attendee API
-      const success = await addAttendee(attendeeData);
-
-      if (success) {
-        // Call parent callback if provided (for local state update)
-        if (onAddAttendee) {
-          onAddAttendee(formData);
-        }
-        handleReset();
-        onOpenChange(false);
-      }
-    } catch (error) {
-      console.error("Error adding attendee:", error);
-      showToast("error", "Failed to add attendee");
+      showToast("error", "Submit is temporarily disabled.");
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +214,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
       middleName: "",
       lastName: "",
       email: "",
-      campus: "",
+      campus: adminCampus ?? "",
       course: "",
       yearLevel: "",
       shirtSize: "",
@@ -174,6 +222,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
       password: "",
       confirmPassword: "",
     });
+    setErrors({});
     setShowPassword(false);
     setShowConfirmPassword(false);
   };
@@ -218,6 +267,11 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 value={formData.studentId}
                 onChange={(e) => handleChange("studentId", e.target.value)}
               />
+              {errors.studentId ? (
+                <p className="text-destructive mt-1 text-xs">
+                  {errors.studentId}
+                </p>
+              ) : null}
             </div>
 
             {/* Name Fields */}
@@ -232,6 +286,11 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                   value={formData.firstName}
                   onChange={(e) => handleChange("firstName", e.target.value)}
                 />
+                {errors.firstName ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.firstName}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <Label htmlFor="middleName" className="mb-2">
@@ -254,6 +313,11 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                   value={formData.lastName}
                   onChange={(e) => handleChange("lastName", e.target.value)}
                 />
+                {errors.lastName ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.lastName}
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -269,6 +333,9 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
               />
+              {errors.email ? (
+                <p className="text-destructive mt-1 text-xs">{errors.email}</p>
+              ) : null}
             </div>
 
             {/* Campus, Course, Year Level */}
@@ -277,21 +344,18 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 <Label htmlFor="campus" className="mb-2">
                   Campus
                 </Label>
-                <Select
+                <Input
+                  id="campus"
                   value={formData.campus}
-                  onValueChange={(value) => handleChange("campus", value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select campus" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CAMPUS_OPTIONS.map((campus) => (
-                      <SelectItem key={campus} value={campus}>
-                        {campus}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  disabled
+                  readOnly
+                  placeholder="Campus"
+                />
+                {errors.campus ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.campus}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <Label htmlFor="course" className="mb-2">
@@ -312,6 +376,11 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.course ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.course}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <Label htmlFor="yearLevel" className="mb-2">
@@ -332,50 +401,63 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.yearLevel ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.yearLevel}
+                  </p>
+                ) : null}
               </div>
             </div>
 
             {/* Shirt Size and Price */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="shirtSize" className="mb-2">
-                  Shirt Size
-                </Label>
-                <Select
-                  value={formData.shirtSize}
-                  onValueChange={(value) => handleChange("shirtSize", value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SHIRT_SIZE_OPTIONS.map((size) => (
-                      <SelectItem key={size} value={size}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="shirtPrice" className="mb-2">
-                  Shirt Price
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="shirtPrice"
-                    type="number"
-                    placeholder="Enter price"
-                    value={formData.shirtPrice}
-                    onChange={(e) => handleChange("shirtPrice", e.target.value)}
-                    className="pr-12"
-                  />
-                  <div className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium">
-                    PHP
+            {isShirtFieldVisible ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="shirtSize" className="mb-2">
+                    Shirt Size
+                  </Label>
+                  <Select
+                    value={formData.shirtSize}
+                    onValueChange={(value) => handleChange("shirtSize", value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shirtSizeOptions.map((size) => (
+                        <SelectItem key={size} value={size}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.shirtSize ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.shirtSize}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <Label htmlFor="shirtPrice" className="mb-2">
+                    Shirt Price
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="shirtPrice"
+                      type="number"
+                      placeholder="Price"
+                      value={formData.shirtPrice}
+                      className="pr-12"
+                      disabled
+                      readOnly
+                    />
+                    <div className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium">
+                      PHP
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : null}
 
             {/* Password Fields */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -406,6 +488,11 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                     )}
                   </Button>
                 </div>
+                {errors.password ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.password}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <Label htmlFor="confirmPassword" className="mb-2">
@@ -436,6 +523,11 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                     )}
                   </Button>
                 </div>
+                {errors.confirmPassword ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.confirmPassword}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>

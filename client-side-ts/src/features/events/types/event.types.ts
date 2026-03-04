@@ -17,7 +17,20 @@ export interface Event {
   sales_data?: unknown[];
   totalUnitsSold?: number;
   totalRevenueAll?: number;
+  merch?: EventMerchMeta | null;
   [key: string]: unknown;
+}
+
+export interface EventSizeOption {
+  custom: boolean;
+  price: string;
+}
+
+export interface EventMerchMeta {
+  category: string | null;
+  type: string | null;
+  selectedSizes: Record<string, EventSizeOption>;
+  selectedVariations: string[];
 }
 
 export interface Attendee {
@@ -113,6 +126,14 @@ export interface CreateEventResponse {
 export interface AddAttendeeFormData {
   eventId: string;
   attendeeId: string;
+  name?: string;
+  email?: string;
+  campus?: string;
+  course?: string;
+  year?: number;
+  shirtSize?: string;
+  shirtPrice?: number;
+  password?: string;
   [key: string]: unknown;
 }
 

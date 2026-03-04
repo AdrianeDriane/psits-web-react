@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { Event } from "../models/event.model";
 import { IEvent } from "../models/event.interface";
 import { IAttendee } from "../models/attendee.interface";
+import { Merch } from "../models/merch.model";
 
 /**
  * Returns a Date object representing the start of the day (00:00:00)
@@ -217,6 +218,67 @@ interface AttendeeResponseDto {
   isPresent: boolean;
 }
 
+interface MerchSizeDto {
+  custom: boolean;
+  price: string;
+}
+
+interface EventMerchDto {
+  category: string | null;
+  type: string | null;
+  selectedSizes: Record<string, MerchSizeDto>;
+  selectedVariations: string[];
+}
+
+type EventWithoutAttendees = Omit<IEvent, "attendees"> & {
+  _id: unknown;
+  __v?: unknown;
+};
+
+type EventByIdV2ResponseDto = EventWithoutAttendees & {
+  merch: EventMerchDto | null;
+};
+
+const normalizeMerchSizes = (value: unknown): Record<string, MerchSizeDto> => {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  if (value instanceof Map) {
+    return Array.from(value.entries()).reduce<Record<string, MerchSizeDto>>(
+      (acc, [size, config]) => {
+        if (typeof size !== "string" || !config || typeof config !== "object") {
+          return acc;
+        }
+
+        const parsed = config as { custom?: unknown; price?: unknown };
+        acc[size] = {
+          custom: Boolean(parsed.custom),
+          price: String(parsed.price ?? "0"),
+        };
+        return acc;
+      },
+      {}
+    );
+  }
+
+  return Object.entries(value).reduce<Record<string, MerchSizeDto>>(
+    (acc, [size, config]) => {
+      if (!config || typeof config !== "object") {
+        return acc;
+      }
+
+      const parsed = config as { custom?: unknown; price?: unknown };
+      acc[size] = {
+        custom: Boolean(parsed.custom),
+        price: String(parsed.price ?? "0"),
+      };
+      return acc;
+    },
+    {}
+  );
+};
+
 const mapPaginatedAttendees = (attendees: IAttendee[]) => {
   return attendees.map<AttendeeResponseDto>((attendee) => ({
     id_number: attendee.id_number,
@@ -275,7 +337,32 @@ export const getEventByIdV2Controller = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    return res.status(200).json({ data: event });
+    const merchDocument = await Merch.findById(event.eventId)
+      .select("category type selectedSizes selectedVariations")
+      .lean();
+
+    const merch: EventMerchDto | null = merchDocument
+      ? {
+          category:
+            typeof merchDocument.category === "string"
+              ? merchDocument.category
+              : null,
+          type:
+            typeof merchDocument.type === "string" ? merchDocument.type : null,
+          selectedSizes: normalizeMerchSizes(merchDocument.selectedSizes),
+          selectedVariations: Array.isArray(merchDocument.selectedVariations)
+            ? merchDocument.selectedVariations.map((item) => String(item))
+            : [],
+        }
+      : null;
+
+    const eventObject = event.toObject() as EventWithoutAttendees;
+    const responseDto: EventByIdV2ResponseDto = {
+      ...eventObject,
+      merch,
+    };
+
+    return res.status(200).json({ data: responseDto });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });

@@ -31,7 +31,10 @@ import {
   EditEventModal,
 } from "@/features/admin/event-management/components/modals";
 import { getEventById } from "@/features/events/api/eventService";
-import type { Event as ApiEvent } from "@/features/events/types/event.types";
+import type {
+  Event as ApiEvent,
+  EventMerchMeta,
+} from "@/features/events/types/event.types";
 import { useAuth } from "@/features/auth";
 import type { Campus } from "@/features/auth/types/auth.types";
 import { showToast } from "@/utils/alertHelper";
@@ -50,6 +53,7 @@ interface EventDetails {
   image: string;
   campusCodes: Campus[];
   venues: string[];
+  merch: EventMerchMeta | null;
 }
 
 const CAMPUS_CODE_TO_NAME: Record<Campus, string> = {
@@ -136,6 +140,48 @@ const getSessionBounds = (
   return { startTime: firstStart, endTime: lastEnd };
 };
 
+const normalizeMerchMeta = (value: unknown): EventMerchMeta | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const raw = value as {
+    category?: unknown;
+    type?: unknown;
+    selectedSizes?: unknown;
+    selectedVariations?: unknown;
+  };
+
+  const selectedSizesSource =
+    raw.selectedSizes && typeof raw.selectedSizes === "object"
+      ? raw.selectedSizes
+      : {};
+
+  const selectedSizes = Object.entries(selectedSizesSource).reduce<
+    EventMerchMeta["selectedSizes"]
+  >((acc, [size, option]) => {
+    if (!option || typeof option !== "object") {
+      return acc;
+    }
+
+    const parsed = option as { custom?: unknown; price?: unknown };
+    acc[size] = {
+      custom: Boolean(parsed.custom),
+      price: String(parsed.price ?? "0"),
+    };
+    return acc;
+  }, {});
+
+  return {
+    category: typeof raw.category === "string" ? raw.category : null,
+    type: typeof raw.type === "string" ? raw.type : null,
+    selectedSizes,
+    selectedVariations: Array.isArray(raw.selectedVariations)
+      ? raw.selectedVariations.map((item) => String(item))
+      : [],
+  };
+};
+
 const mapApiEventToEventDetails = (
   routeEventId: string,
   event: ApiEvent
@@ -189,6 +235,7 @@ const mapApiEventToEventDetails = (
     image,
     campusCodes: normalizedCampusCodes,
     venues: normalizedCampusCodes.map((code) => CAMPUS_CODE_TO_NAME[code]),
+    merch: normalizeMerchMeta(event.merch),
   };
 };
 
@@ -634,6 +681,8 @@ const EventManagement: React.FC = () => {
                         venue={CAMPUS_CODE_TO_NAME[campusCode]}
                         eventId={eventDetails.id}
                         campusCode={campusCode}
+                        adminCampus={user?.campus}
+                        merch={eventDetails.merch}
                       />
                     </TabsContent>
                   ))}

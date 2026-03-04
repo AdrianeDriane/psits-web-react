@@ -37,6 +37,7 @@ import type { FilterOptions, AttendeeFormData } from "./modals";
 import type {
   AttendeesPagination,
   GetAttendeesParams,
+  EventMerchMeta,
 } from "@/features/events/types/event.types";
 import { CampusView } from "@/components/common/CampusView";
 
@@ -58,12 +59,16 @@ interface AttendeesTableProps {
   venue: string;
   eventId: string;
   campusCode: string;
+  adminCampus?: string;
+  merch?: EventMerchMeta | null;
 }
 
 export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   venue,
   eventId,
   campusCode,
+  adminCampus,
+  merch,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -624,6 +629,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         onOpenChange={setIsAddAttendeeOpen}
         eventId={eventId}
         onAddAttendee={handleAddAttendeeSubmit}
+        adminCampus={adminCampus}
+        merch={merch}
       />
       <StudentDetailsModal
         open={isStudentDetailsOpen}
