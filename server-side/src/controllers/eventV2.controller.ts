@@ -1,12 +1,12 @@
+import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-import { Event } from "../models/event.model";
-import { IEvent } from "../models/event.interface";
+import { attendeeRegistrationMail } from "../mail_template/mail.template";
 import { IAttendee } from "../models/attendee.interface";
+import { IEvent } from "../models/event.interface";
+import { Event } from "../models/event.model";
 import { Merch } from "../models/merch.model";
 import { Student } from "../models/student.model";
-import { attendeeRegistrationMail } from "../mail_template/mail.template";
 
 /**
  * Returns a Date object representing the start of the day (00:00:00)
@@ -905,5 +905,40 @@ export const addAttendeeV2Controller = async (req: Request, res: Response) => {
       error: "INTERNAL_ERROR",
       message: "Internal server error",
     });
+  }
+};
+export const getMyEventsController = async (req: Request, res: Response) => {
+  try {
+    const idNumber = req.userV2?.idNumber;
+    const campus = req.userV2?.campus;
+
+    if (!idNumber) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Exclude sensitive/unnecessary fields with - prefix
+    const events = await Event.find()
+      .select("-totalRevenueAll -totalUnitsSold -limit -sales_data")
+      .sort({ eventDate: 1 })
+      .lean();
+
+    // Just filter attendees
+    const filteredEvents = events.map((event) => ({
+      ...event,
+      attendees: (event.attendees || []).filter((att) => {
+        if (!campus) {
+          return att.id_number === idNumber;
+        }
+        return (
+          att.id_number === idNumber &&
+          att.campus?.toLowerCase() === campus.toLowerCase()
+        );
+      }),
+    }));
+
+    return res.status(200).json({ data: filteredEvents });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

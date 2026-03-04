@@ -1,12 +1,13 @@
-import React from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { CampusView } from '@/components/common/CampusView';
+import { useAuth } from '@/features/auth';
+import React from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 export const StudentLayout: React.FC = () => {
-  const userName: string = sessionStorage.getItem('FullName') ?? 'Antonio Juan'
-  const location = useLocation()
-  
-  // Check if we're on the base /student path (index route shows AccountSettings)
-  const isIndexRoute = location.pathname === '/student' || location.pathname === '/student/'
+  const { user } = useAuth();
+  const userName = user?.name || 'Student';
+  const location = useLocation();
+  const isIndexRoute = location.pathname === '/student' || location.pathname === '/student/';
 
   return (
     <div className="w-full">
@@ -31,17 +32,18 @@ export const StudentLayout: React.FC = () => {
                 Event Attendance
               </NavLink>
             </li>
-
-            <li>
-              <NavLink
-                to="my-orders"
-                className={({ isActive }) =>
-                  `pb-3 ${isActive ? 'border-b-4 border-sky-400' : 'border-b-4 border-transparent'}`
-                }
-              >
-                My Orders
-              </NavLink>
-            </li>
+            <CampusView allowedCampuses={['UC-Main']} role="Student">
+              <li>
+                <NavLink
+                  to="my-orders"
+                  className={({ isActive }) =>
+                    `pb-3 ${isActive ? 'border-b-4 border-sky-400' : 'border-b-4 border-transparent'}`
+                  }
+                >
+                  My Orders
+                </NavLink>
+              </li>
+            </CampusView>
 
             <li>
               <NavLink
@@ -63,7 +65,7 @@ export const StudentLayout: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default StudentLayout
+export default StudentLayout;

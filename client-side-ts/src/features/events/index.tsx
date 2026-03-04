@@ -1,11 +1,15 @@
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+export type {
+  AttendeeData,
+  Event,
+  EventData,
+  SessionConfig,
+  SessionConfigEntry,
+} from "./types/event.types";
+// ─── API ──────────────────────────────────────────────────────────────────────
+export { getEvents, getMyEvents } from "./api/eventService";
 
-const index = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
-
-export default index
+// ─── Components ───────────────────────────────────────────────────────────────
+export { QRCodeDisplay } from "./components/QRCodeDisplay";
+export { EventCard } from "./components/EventCard";

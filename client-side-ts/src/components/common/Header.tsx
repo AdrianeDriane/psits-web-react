@@ -1,47 +1,81 @@
-import { useState, useRef } from "react";
-import { NavLink, Link, useLocation } from "react-router";
-import { Menu, X, ChevronDown, ShoppingCart, LogOut, UserCircle } from "lucide-react";
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useMotionValueEvent,
-} from "framer-motion";
-import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
+import { CampusView } from "@/components/common/CampusView";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/features/auth";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/features/auth";
+import type { Campus } from "@/features/auth/types/auth.types";
+import { cn } from "@/lib/utils";
+import showToast from "@/utils/alertHelper";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValueEvent,
+  useScroll,
+} from "framer-motion";
+import {
+  ChevronDown,
+  LogOut,
+  Menu,
+  ShoppingCart,
+  UserCircle,
+  X,
+} from "lucide-react";
+import { useRef, useState } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
 
-const navLinks = [
-  { name: "Home", href: "/" },
+interface NavLinkItem {
+  name: string;
+  href: string;
+  hasDropdown?: boolean;
+  allowedCampus?: Campus[];
+}
+
+const staticNavLinks: NavLinkItem[] = [
   { name: "Events", href: "/events" },
   { name: "Organizations", href: "/organizations" },
   { name: "Resources", href: "/resources" },
-  { name: "Shop", href: "/shop", hasDropdown: false },
+  {
+    name: "Shop",
+    href: "/shop",
+    hasDropdown: false,
+    allowedCampus: ["UC-Main"],
+  },
 ];
 
 export const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
-  /* original imports */
+  const navigate = useNavigate();
   const { scrollY } = useScroll();
   const lastScrollY = useRef(0);
   const location = useLocation();
   const isStaticPage = ["/privacy", "/terms"].includes(location.pathname);
+
+  const homeHref =
+    !isAuthenticated || !user
+      ? "/"
+      : user.role === "Admin"
+        ? "/admin/events"
+        : user.role === "Student"
+          ? "/student/event-attendance"
+          : "/";
+
+  const navLinks: NavLinkItem[] = [
+    { name: "Home", href: homeHref },
+    ...staticNavLinks,
+  ];
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     if (isStaticPage) {
       setHidden(false);
       return;
     }
-
     const previous = lastScrollY.current;
     if (latest > previous && latest > 150) {
       setHidden(true);
@@ -50,6 +84,77 @@ export const Header = () => {
     }
     lastScrollY.current = latest;
   });
+
+  const handleLogout = async () => {
+    setIsOpen(false);
+    try {
+      await logout();
+      showToast("success", "Logged out successfully");
+      navigate("/auth/login", { replace: true });
+    } catch {
+      showToast("error", "Logout failed. Please try again.");
+    }
+  };
+  const renderNavLink = (link: NavLinkItem, mobile = false) => {
+    const linkEl = mobile ? (
+      <NavLink
+        key={link.name}
+        to={link.href}
+        onClick={() => setIsOpen(false)}
+        className={({ isActive }) =>
+          cn(
+            "flex items-center justify-between rounded-2xl p-4 transition-all duration-200",
+            isActive
+              ? "bg-primary/10 text-primary font-bold"
+              : "text-gray-600 hover:bg-gray-50"
+          )
+        }
+      >
+        <span className="text-lg">{link.name}</span>
+        {link.hasDropdown && (
+          <ChevronDown
+            size={18}
+            className="opacity-50 transition-transform duration-200"
+          />
+        )}
+      </NavLink>
+    ) : (
+      <div key={link.name} className="group relative">
+        <NavLink
+          to={link.href}
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-all duration-200",
+              isActive
+                ? "text-primary bg-primary/5"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            )
+          }
+        >
+          {link.name}
+          {link.hasDropdown && <ChevronDown size={14} className="opacity-50" />}
+        </NavLink>
+      </div>
+    );
+
+    if (link.allowedCampus) {
+      // Not logged in — show the link freely (no campus restriction applies)
+      if (!isAuthenticated || !user) return linkEl;
+
+      // Logged in — restrict by campus
+      return (
+        <CampusView
+          key={link.name}
+          allowedCampuses={link.allowedCampus}
+          role={user.role === "Admin" ? "Admin" : "Student"}
+        >
+          {linkEl}
+        </CampusView>
+      );
+    }
+
+    return linkEl;
+  };
 
   return (
     <div
@@ -65,12 +170,10 @@ export const Header = () => {
         }}
         animate={hidden ? "hidden" : "visible"}
         transition={{ duration: 0.35, ease: "easeInOut" }}
-        className={cn(
-          "flex h-14 w-full max-w-7xl items-center justify-between rounded-full border border-gray-100/50 bg-white/95 px-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md md:h-16 md:px-6"
-        )}
+        className="flex h-14 w-full max-w-7xl items-center justify-between rounded-full border border-gray-100/50 bg-white/95 px-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md md:h-16 md:px-6"
       >
-        {/* Logo and Title */}
-        <Link to="/" className="group flex shrink-0 items-center gap-3">
+        {/* Logo */}
+        <Link to={homeHref} className="group flex shrink-0 items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center md:h-10 md:w-10">
             <motion.img
               src={logo}
@@ -94,55 +197,65 @@ export const Header = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-1 lg:flex xl:gap-4">
-          {navLinks.map((link) => (
-            <div key={link.name} className="group relative">
-              <NavLink
-                to={link.href}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-all duration-200",
-                    isActive
-                      ? "text-primary bg-primary/5"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  )
-                }
-              >
-                {link.name}
-                {link.hasDropdown && (
-                  <ChevronDown size={14} className="opacity-50" />
-                )}
-              </NavLink>
-            </div>
-          ))}
+          {navLinks.map((link) => renderNavLink(link, false))}
         </div>
 
-        {/* Right Section: Cart and Sign In */}
+        {/* Right Section */}
         <div className="flex items-center gap-2 md:gap-4">
-          {/* Cart */}
-          <Link to="/cart" className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-50" aria-label="View cart">
-            <ShoppingCart size={20} />
-            <span className="text-sm font-semibold hidden xl:inline">Cart</span>
-          </Link>
+          {/* Cart — only for authenticated UC-Main users */}
+          {isAuthenticated && user ? (
+            <CampusView
+              allowedCampuses={["UC-Main"]}
+              role={user.role === "Admin" ? "Admin" : "Student"}
+            >
+              <Link
+                to="/cart"
+                className="flex items-center gap-2 rounded-full px-3 py-2 text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                aria-label="View cart"
+              >
+                <ShoppingCart size={20} />
+                <span className="hidden text-sm font-semibold xl:inline">
+                  Cart
+                </span>
+              </Link>
+            </CampusView>
+          ) : (
+            <Link
+              to="/cart"
+              className="flex items-center gap-2 rounded-full px-3 py-2 text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+              aria-label="View cart"
+            >
+              <ShoppingCart size={20} />
+              <span className="hidden text-sm font-semibold xl:inline">
+                Cart
+              </span>
+            </Link>
+          )}
 
           {/* User Profile or Sign In */}
           {isAuthenticated && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-50">
+                <button className="flex items-center gap-2 rounded-full px-3 py-2 text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900">
                   <UserCircle size={20} />
-                  <span className="text-sm font-semibold hidden xl:inline">{user.name || user.idNumber}</span>
+                  <span className="hidden text-sm font-semibold xl:inline">
+                    {user.name || user.idNumber}
+                  </span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
+                  <Link
+                    to="/profile"
+                    className="flex cursor-pointer items-center gap-2"
+                  >
                     <UserCircle size={16} />
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => logout()}
-                  className="flex items-center gap-2 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={handleLogout}
+                  className="flex cursor-pointer items-center gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   <LogOut size={16} />
                   <span>Logout</span>
@@ -177,45 +290,23 @@ export const Header = () => {
               className="absolute top-full right-0 left-0 z-[60] mx-4 mt-4 max-h-[80vh] overflow-hidden overflow-y-auto rounded-3xl border border-gray-100 bg-white/95 shadow-2xl backdrop-blur-xl lg:hidden"
             >
               <div className="flex flex-col gap-2 p-4">
-                {navLinks.map((link) => (
-                  <NavLink
-                    key={link.name}
-                    to={link.href}
-                    onClick={() => setIsOpen(false)}
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center justify-between rounded-2xl p-4 transition-all duration-200",
-                        isActive
-                          ? "bg-primary/10 text-primary font-bold"
-                          : "text-gray-600 hover:bg-gray-50"
-                      )
-                    }
-                  >
-                    <span className="text-lg">{link.name}</span>
-                    {link.hasDropdown && (
-                      <ChevronDown
-                        size={18}
-                        className={cn(
-                          "transition-transform duration-200",
-                          "opacity-50"
-                        )}
-                      />
-                    )}
-                  </NavLink>
-                ))}
+                {navLinks.map((link) => renderNavLink(link, true))}
+
                 <div className="mx-2 my-2 h-px bg-gray-100" />
+
                 {isAuthenticated && user ? (
                   <div className="flex flex-col gap-2">
-                    <div className="px-4 py-3 rounded-2xl bg-primary/5">
-                      <p className="text-sm font-semibold text-gray-900">{user.name || user.idNumber}</p>
+                    <div className="bg-primary/5 rounded-2xl px-4 py-3">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {user.name || user.idNumber}
+                      </p>
                     </div>
                     <Button
-                      asChild
                       variant="ghost"
                       className="w-full rounded-2xl py-6 text-base font-semibold text-red-600 hover:bg-red-50 hover:text-red-700"
-                      onClick={() => setIsOpen(false)}
+                      onClick={handleLogout}
                     >
-                      <button onClick={() => logout()}>Logout</button>
+                      Logout
                     </Button>
                   </div>
                 ) : (
@@ -244,6 +335,6 @@ export const Header = () => {
           )}
         </AnimatePresence>
       </motion.nav>
-    </div >
+    </div>
   );
 };
