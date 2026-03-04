@@ -4,11 +4,13 @@ import {
   requireAccessTokenWithDBCheck,
   roleAuthenticateV2,
 } from "../middlewares/authV2.middleware";
+
 import {
   addAttendeeV2Controller,
   getAllEventsV2Controller,
   getEventAttendeesV2Controller,
   getEventByIdV2Controller,
+  getMyEventsController,
 } from "../controllers/eventV2.controller";
 
 const router = Router();
@@ -19,6 +21,15 @@ router.get(
   requireAccessTokenV2,
   roleAuthenticateV2(["Admin", "Student"]),
   getAllEventsV2Controller
+);
+
+// GET all events the student is attended in,
+// with their attendance record filtered per event
+router.get(
+  "/my-events",
+  requireAccessTokenV2,
+  roleAuthenticateV2(["Student"]),
+  getMyEventsController
 );
 
 // GET specific event
