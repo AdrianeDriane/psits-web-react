@@ -1,0 +1,357 @@
+import defaultThumbnail from "@/assets/empty.webp";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+// import { QRCodeDisplay } from '@/features/events/components/QRCodeDisplay';
+// import { getMerchByEventId } from '@/features/merch/api/merchService';
+// import type { MerchData } from '@/features/merch/types/merch.types';
+import { useAuth } from "@/features/auth";
+import type { EventData } from "@/features/events/types/event.types";
+import { CalendarDays, CheckCircle2, MapPin, XCircle } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+// import { useNavigate } from 'react-router-dom';
+
+interface EventCardProps {
+  event: EventData;
+  studentId: string;
+}
+
+export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
+  const {
+    title,
+    description,
+    imageUrl,
+    location,
+    attendees,
+    sessionConfig,
+    attendanceType,
+    isPast,
+  } = event;
+  const { user: _user } = useAuth();
+  // const navigate = useNavigate();
+
+  const fallbackImage = defaultThumbnail;
+  const [imgSrc, setImgSrc] = useState<string>(imageUrl || fallbackImage);
+  const [imgLoading, setImgLoading] = useState(!!imageUrl);
+
+  // ── Merch fetch commented out for staging ─────────────────────────────────
+  // const [activeMerch, setActiveMerch] = useState<MerchData | null>(null);
+  // const [merchChecked, setMerchChecked] = useState(false);
+  // useEffect(() => {
+  //   if (attendanceType !== 'ticketed' || !!studentAttendee || !event.id) return;
+  //   let cancelled = false;
+  //   const fetchMerch = async () => {
+  //     try {
+  //       const result = await getMerchByEventId(event.id!);
+  //       if (cancelled) return;
+  //       if (!result || (Array.isArray(result) && result.length === 0)) {
+  //         setActiveMerch(null);
+  //         setMerchChecked(true);
+  //         return;
+  //       }
+  //       const merchArray: MerchData[] = Array.isArray(result) ? result : [result];
+  //       const now = new Date();
+  //       const audience = user?.course ?? '';
+  //       const active = merchArray.find((item) => {
+  //         const endDate = new Date(item.end_date);
+  //         const audiences: string[] = item.selectedAudience.includes(',')
+  //           ? item.selectedAudience.split(',').map((a) => a.trim())
+  //           : [item.selectedAudience];
+  //         return (
+  //           item.is_active &&
+  //           now <= endDate &&
+  //           (audiences.includes('all') || audiences.some((a) => audience.includes(a)))
+  //         );
+  //       });
+  //       setActiveMerch(active ?? null);
+  //     } catch {
+  //       setActiveMerch(null);
+  //     } finally {
+  //       if (!cancelled) setMerchChecked(true);
+  //     }
+  //   };
+  //   fetchMerch();
+  //   return () => { cancelled = true; };
+  // }, [attendanceType, studentAttendee, event.id, user?.course]);
+
+  useEffect(() => {
+    if (imageUrl) {
+      setImgSrc(imageUrl);
+      setImgLoading(true);
+    } else {
+      setImgSrc(fallbackImage);
+      setImgLoading(false);
+    }
+  }, [imageUrl]);
+
+  // ── Student attendee lookup ────────────────────────────────────────────────
+  const studentAttendee = useMemo(() => {
+    if (!attendees) return undefined;
+    return attendees.find((att) => String(att.id_number) === String(studentId));
+  }, [attendees, studentId]);
+
+  const canViewQr =
+    attendanceType === "open" ||
+    (attendanceType === "ticketed" && !!studentAttendee);
+
+  // ── Attendance helpers ─────────────────────────────────────────────────────
+  const hasAnyAttendance = useMemo(() => {
+    if (!studentAttendee) return false;
+    if (sessionConfig) {
+      return Object.entries(sessionConfig).some(([sessionKey, config]) => {
+        const cfg = config as { enabled?: boolean };
+        return (
+          cfg.enabled &&
+          studentAttendee.attendance?.[sessionKey]?.attended === true
+        );
+      });
+    }
+    return studentAttendee.isAttended === true;
+  }, [studentAttendee, sessionConfig]);
+
+  const formatDate = (eventDate?: Date | string): string => {
+    if (!eventDate) return "Date TBA";
+    return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(eventDate));
+  };
+
+  const sessions = useMemo(() => {
+    if (!sessionConfig) return null;
+    const activeSessions = Object.entries(sessionConfig)
+      .filter(([_, config]) => (config as { enabled?: boolean }).enabled)
+      .map(([key, config]) => {
+        const attended = studentAttendee?.attendance?.[key]?.attended === true;
+        const timeRange = (config as { timeRange?: string }).timeRange ?? "";
+        return {
+          key,
+          label:
+            key.charAt(0).toUpperCase() +
+            key
+              .slice(1)
+              .replace(/([A-Z])/g, " $1")
+              .trim(),
+          attended,
+          timeRange,
+          hasRecord: studentAttendee?.attendance?.[key] !== undefined,
+        };
+      });
+    return activeSessions.length > 0 ? activeSessions : null;
+  }, [sessionConfig, studentAttendee]);
+
+  const hasAnySessions = useMemo(
+    () => sessions?.some((s) => s.hasRecord) ?? false,
+    [sessions]
+  );
+
+  // ── Shared pill ───────────────────────────────────────────────────────────
+  const AttendancePill: React.FC<{ attended: boolean; label?: string }> = ({
+    attended,
+    label,
+  }) => (
+    <div className="flex items-center gap-1.5">
+      {attended ? (
+        <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-600" />
+      ) : (
+        <XCircle className="h-4 w-4 flex-shrink-0 text-red-400" />
+      )}
+      {label && (
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+      )}
+      <Badge
+        variant="outline"
+        className={`border-0 text-xs font-semibold ${
+          attended ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700"
+        }`}
+      >
+        {attended ? "Present" : "Absent"}
+      </Badge>
+    </div>
+  );
+
+  // ── Ticket / QR section — replaced with Coming Soon for staging ───────────
+  const QRSection: React.FC = () => (
+    <div className="flex flex-col items-center gap-3 px-4 py-6 text-center">
+      <span className="text-4xl">🚧</span>
+      <p className="text-sm font-semibold text-gray-700">Feature Coming Soon</p>
+      <p className="max-w-[220px] text-xs text-gray-400">
+        QR Code attendance will be available in the next update.
+      </p>
+    </div>
+  );
+
+  return (
+    <Card className="h-full rounded-2xl transition-all hover:shadow-md">
+      <CardContent className="flex flex-col items-start gap-4 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
+        {/* ── Thumbnail ──────────────────────────────────────────────────── */}
+        <div className="relative h-48 w-full flex-shrink-0 overflow-hidden rounded-xl bg-gray-200 sm:h-40 sm:w-48 md:h-56 md:w-72">
+          {imgLoading && (
+            <div className="absolute inset-0 animate-pulse bg-gray-100" />
+          )}
+          <img
+            src={imgSrc}
+            alt={title}
+            className={`h-full w-full object-cover transition-opacity ${imgLoading ? "opacity-0" : "opacity-100"}`}
+            onError={() => {
+              setImgSrc(fallbackImage);
+              setImgLoading(false);
+            }}
+            onLoad={() => setImgLoading(false)}
+          />
+          {isPast && (
+            <div className="absolute inset-0 flex items-end bg-black/30 p-2">
+              <span className="rounded bg-black/50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
+                Past Event
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Event Info ─────────────────────────────────────────────────── */}
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg leading-tight font-semibold sm:text-xl md:text-2xl">
+            {title}
+          </h3>
+          <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-sky-500" />
+              <span className="text-xs text-slate-700">
+                {location || "University of Cebu Main Campus"}
+              </span>
+            </div>
+            {event.date && (
+              <div className="flex items-center gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5 flex-shrink-0 text-sky-500" />
+                <span className="text-xs text-slate-600">
+                  {formatDate(event.date)}
+                </span>
+              </div>
+            )}
+          </div>
+          <p className="mt-2 line-clamp-2 text-xs text-slate-500 sm:mt-3 sm:text-sm">
+            {description}
+          </p>
+        </div>
+
+        {/* ══ PAST — Inline Attendance Summary ══════════════════════════════ */}
+        {isPast ? (
+          <div className="mt-2 w-full flex-shrink-0 sm:mt-0 sm:w-56">
+            <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <p className="text-center text-[11px] font-semibold tracking-widest text-gray-400 uppercase">
+                Attendance Summary
+              </p>
+              {!studentAttendee || (sessions && !hasAnySessions) ? (
+                <div className="flex items-center justify-center gap-1.5 py-1">
+                  <XCircle className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs text-gray-500">Not Recorded</span>
+                </div>
+              ) : sessions && sessions.length > 0 ? (
+                <div className="divide-y divide-gray-200">
+                  {sessions
+                    .filter((s) => s.hasRecord)
+                    .map((session) => (
+                      <div
+                        key={session.key}
+                        className="flex items-center justify-between py-1.5 first:pt-1 last:pb-1"
+                      >
+                        <span className="truncate pr-2 text-xs font-medium text-gray-600">
+                          {session.label}
+                          {session.timeRange && (
+                            <span className="ml-1 text-[10px] font-normal text-gray-400">
+                              {session.timeRange}
+                            </span>
+                          )}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`flex-shrink-0 border-0 text-[11px] font-semibold ${
+                            session.attended
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {session.attended ? (
+                            <>
+                              <CheckCircle2 className="mr-1 h-3 w-3" />
+                              Present
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="mr-1 h-3 w-3" />
+                              Absent
+                            </>
+                          )}
+                        </Badge>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="flex justify-center py-1">
+                  <AttendancePill attended={hasAnyAttendance} />
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ══ TODAY / UPCOMING — QR Dialog ════════════════════════════════ */
+          <div className="mt-4 w-full flex-shrink-0 sm:mt-0 sm:w-auto">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full cursor-pointer bg-sky-600 hover:bg-sky-700 sm:w-auto"
+                >
+                  Attendance QR
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto p-4 sm:max-w-4xl sm:p-6">
+                <div className="grid grid-cols-1 place-items-center gap-4 sm:gap-8 md:grid-cols-2">
+                  {/* Left: Image */}
+                  <div className="flex w-full items-center justify-center overflow-hidden rounded-xl pt-4">
+                    <img
+                      src={imgSrc}
+                      alt={title}
+                      className="h-40 w-full rounded-xl object-cover sm:h-64 md:h-80"
+                    />
+                  </div>
+
+                  {/* Right: QR + Status */}
+                  <div className="flex w-full flex-col items-center gap-4">
+                    <DialogHeader className="w-full text-center">
+                      <DialogTitle className="text-lg text-sky-600 sm:text-2xl">
+                        {title}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {event.date && formatDate(event.date)}
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    {/* 🚧 QR + Ticket check commented out for staging — replaced with Coming Soon */}
+                    {/* {!canViewQr ? <TicketRequiredSection /> : ( */}
+                    {/*   <> */}
+                    {/*     <QRCodeDisplay value={qrValue} size={160} /> */}
+                    {/*     ... attendance status ... */}
+                    {/*   </> */}
+                    {/* )} */}
+                    <QRSection />
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
