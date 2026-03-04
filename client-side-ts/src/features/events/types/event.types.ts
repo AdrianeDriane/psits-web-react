@@ -137,6 +137,35 @@ export interface AddAttendeeFormData {
   [key: string]: unknown;
 }
 
+export interface AddAttendeeV2Payload {
+  studentId: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email: string;
+  course: string;
+  yearLevel: string;
+  shirtSize?: string;
+  password: string;
+}
+
+export interface AddAttendeeV2Response {
+  message: string;
+  data: {
+    isNewStudent: boolean;
+    emailSent?: boolean;
+    attendee: {
+      id_number: string;
+      name: string;
+      campus: string;
+      course: string;
+      year: number;
+      shirtSize: string;
+      shirtPrice: number;
+    };
+  };
+}
+
 export interface RemoveAttendeeFormData {
   eventId: string;
   attendeeId: string;

@@ -1,9 +1,11 @@
 import { Router } from "express";
 import {
   requireAccessTokenV2,
+  requireAccessTokenWithDBCheck,
   roleAuthenticateV2,
 } from "../middlewares/authV2.middleware";
 import {
+  addAttendeeV2Controller,
   getAllEventsV2Controller,
   getEventAttendeesV2Controller,
   getEventByIdV2Controller,
@@ -33,6 +35,14 @@ router.get(
   requireAccessTokenV2,
   roleAuthenticateV2(["Admin"]),
   getEventAttendeesV2Controller
+);
+
+// POST add attendee (creates user account if needed + registers as attendee)
+router.post(
+  "/:eventId/attendees",
+  requireAccessTokenWithDBCheck,
+  roleAuthenticateV2(["Admin"]),
+  addAttendeeV2Controller
 );
 
 export default router;

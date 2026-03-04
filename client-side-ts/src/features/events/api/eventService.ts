@@ -12,6 +12,8 @@ import type {
   CreateEventData,
   CreateEventResponse,
   AddAttendeeFormData,
+  AddAttendeeV2Payload,
+  AddAttendeeV2Response,
   RemoveAttendeeFormData,
   UpdateSettingsFormData,
   RaffleWinnerResponse,
@@ -345,6 +347,44 @@ export const addAttendee = async (
       ? error.response?.data?.message || "Something went wrong"
       : "Something went wrong";
     showToast("error", errorMessage);
+    return false;
+  }
+};
+
+export const addAttendeeV2 = async (
+  eventId: string,
+  payload: AddAttendeeV2Payload
+): Promise<AddAttendeeV2Response | false> => {
+  try {
+    if (!eventId?.trim()) {
+      showToast("error", "Event ID is required");
+      return false;
+    }
+
+    const response = await api.post<AddAttendeeV2Response>(
+      `/api/v2/events/${eventId}/attendees`,
+      payload
+    );
+
+    if (
+      response.data.data.isNewStudent &&
+      response.data.data.emailSent === false
+    ) {
+      showToast("warning", response.data.message);
+    } else {
+      showToast("success", response.data.message);
+    }
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
+      const message =
+        axiosError.response?.data?.message || "Failed to add attendee";
+      showToast("error", message);
+    } else {
+      console.error("Error adding attendee V2:", error);
+      showToast("error", "An unexpected error occurred");
+    }
     return false;
   }
 };

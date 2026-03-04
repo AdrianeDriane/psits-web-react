@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { showToast } from "@/utils/alertHelper";
+import { addAttendeeV2 } from "@/features/events/api/eventService";
 import type { EventMerchMeta } from "@/features/events/types/event.types";
 
 interface AddAttendeeModalProps {
@@ -46,6 +47,7 @@ export interface AttendeeFormData {
 const COURSE_OPTIONS = ["BSIT", "BSCS", "ACT"];
 const YEAR_LEVEL_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 const REQUIRED_MESSAGE = "This field is required";
+const STUDENT_ID_REGEX = /^\d{8}$/;
 
 // Validation constants
 const NAME_REGEX = /^[a-zA-ZÀ-ÿ\s'.,-]+$/;
@@ -143,9 +145,6 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
   adminCampus,
   merch,
 }) => {
-  void onAddAttendee;
-  void eventId;
-
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<AttendeeFormData>({
     studentId: "",
@@ -224,6 +223,8 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
 
     if (!formData.studentId.trim()) {
       nextErrors.studentId = REQUIRED_MESSAGE;
+    } else if (!STUDENT_ID_REGEX.test(formData.studentId.trim())) {
+      nextErrors.studentId = "Student ID must be exactly 8 digits";
     }
 
     // First Name validation
@@ -287,7 +288,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) {
       showToast("error", "Please complete required fields.");
       return;
@@ -295,7 +296,23 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
 
     setIsLoading(true);
     try {
-      showToast("error", "Submit is temporarily disabled.");
+      const result = await addAttendeeV2(eventId, {
+        studentId: formData.studentId.trim(),
+        firstName: formData.firstName.trim(),
+        middleName: formData.middleName.trim() || undefined,
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        course: formData.course.trim(),
+        yearLevel: formData.yearLevel,
+        shirtSize: formData.shirtSize.trim() || undefined,
+        password: formData.password,
+      });
+
+      if (result) {
+        onAddAttendee?.(formData);
+        handleReset();
+        onOpenChange(false);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -544,7 +561,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 </div>
                 <div>
                   <Label htmlFor="shirtPrice" className="mb-2">
-                    Shirt Price
+                    Price
                   </Label>
                   <div className="relative">
                     <Input
