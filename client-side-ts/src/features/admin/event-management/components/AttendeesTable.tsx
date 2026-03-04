@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, Download, Plus, Filter } from "lucide-react";
 import { getAttendees } from "@/features/events/api/eventService";
+import { showToast } from "@/utils/alertHelper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,7 +67,7 @@ interface Attendee {
 interface AttendeesTableProps {
   venue: string;
   eventId: string;
-  campusCode: string;
+  campusCode: string | "all";
   adminCampus?: string;
   merch?: EventMerchMeta | null;
   eventStatus?: "ongoing" | "ended" | "upcoming";
@@ -135,7 +136,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
       const params: GetAttendeesParams = {
         page: currentPage,
         limit: pagination.limit,
-        campus: campusCode,
+        campus: campusCode === "all" ? undefined : campusCode,
         search: debouncedSearchQuery || undefined,
         attendanceStatus:
           activeFilters.attendanceStatus.length > 0
@@ -248,7 +249,61 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   };
 
   const handleExportCSV = () => {
-    console.warn("Export to CSV");
+    if (attendees.length === 0) {
+      showToast("warning", "No attendees to export");
+      return;
+    }
+
+    const headers = [
+      "Student ID",
+      "Name",
+      "Email",
+      "Campus",
+      "Course",
+      "Year",
+      "Status",
+      "Registered On",
+      "Registered By",
+      "Shirt Size",
+      "Shirt Price",
+    ];
+
+    const rows = attendees.map((attendee) => [
+      attendee.studentId,
+      attendee.name,
+      attendee.email,
+      attendee.campus || "",
+      attendee.courseYear.split(" - ")[0] || "",
+      attendee.courseYear.split(" - ")[1] || "",
+      getAttendanceSummary(attendee.attendance),
+      attendee.registeredOn.replace("\n", " "),
+      attendee.registeredBy,
+      attendee.shirtSize || "",
+      attendee.shirtPrice || "",
+    ]);
+
+    const csvContent = [
+      headers.map((h) => `"${h}"`).join(","),
+      ...rows.map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `attendees-${venue.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast("success", "Attendees exported successfully");
   };
 
   const handleAddAttendee = () => {
