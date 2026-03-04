@@ -55,7 +55,7 @@ export const ErrorPage: React.FC = () => {
 
         <div className="pt-8">
           <Link
-            to="/"
+            to="/admin/events"
             className="btn btn-primary hover:shadow-primary/25 gap-2 shadow-lg transition-all duration-300 hover:-translate-y-1"
           >
             <Home className="h-5 w-5" />

@@ -32,9 +32,9 @@ const EventsPage: React.FC = () => {
   }, []);
 
   // Event handlers
-  const handleAddEvent = () => {
-    setIsAddEventModalOpen(true);
-  };
+  // const handleAddEvent = () => {
+  //   setIsAddEventModalOpen(true);
+  // };
 
   const handleManageEvent = (eventId: string) => {
     const getEventId = (event: ApiEvent): string =>
@@ -57,7 +57,7 @@ const EventsPage: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col">
-      <EventsHeader onAddEvent={handleAddEvent} />
+      <EventsHeader />
 
       <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
 

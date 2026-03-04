@@ -1,9 +1,15 @@
 import { Router } from "express";
 import {
   requireAccessTokenV2,
+  requireAccessTokenWithDBCheck,
   roleAuthenticateV2,
 } from "../middlewares/authV2.middleware";
-import { getAllEventsV2Controller } from "../controllers/eventV2.controller";
+import {
+  addAttendeeV2Controller,
+  getAllEventsV2Controller,
+  getEventAttendeesV2Controller,
+  getEventByIdV2Controller,
+} from "../controllers/eventV2.controller";
 
 const router = Router();
 
@@ -13,6 +19,30 @@ router.get(
   requireAccessTokenV2,
   roleAuthenticateV2(["Admin", "Student"]),
   getAllEventsV2Controller
+);
+
+// GET specific event
+router.get(
+  "/:eventId",
+  requireAccessTokenV2,
+  roleAuthenticateV2(["Admin", "Student"]),
+  getEventByIdV2Controller
+);
+
+// GET paginated attendees for specific event
+router.get(
+  "/:eventId/attendees",
+  requireAccessTokenV2,
+  roleAuthenticateV2(["Admin"]),
+  getEventAttendeesV2Controller
+);
+
+// POST add attendee (creates user account if needed + registers as attendee)
+router.post(
+  "/:eventId/attendees",
+  requireAccessTokenWithDBCheck,
+  roleAuthenticateV2(["Admin"]),
+  addAttendeeV2Controller
 );
 
 export default router;

@@ -4,13 +4,16 @@ import backendConnection from "../../../api/backendApi";
 import type {
   ApiErrorResponse,
   Event,
-  AttendeesResponse,
+  GetAttendeesParams,
+  PaginatedAttendeesResponse,
   EventCheckData,
   RaffleResponse,
   StatisticsData,
   CreateEventData,
   CreateEventResponse,
   AddAttendeeFormData,
+  AddAttendeeV2Payload,
+  AddAttendeeV2Response,
   RemoveAttendeeFormData,
   UpdateSettingsFormData,
   RaffleWinnerResponse,
@@ -52,6 +55,10 @@ interface EventApiResponse {
   data: Event[];
 }
 
+interface EventByIdApiResponse {
+  data: Event;
+}
+
 export const getEvents = async (): Promise<Event[] | false> => {
   try {
     const response = await api.get<EventApiResponse>(
@@ -63,6 +70,22 @@ export const getEvents = async (): Promise<Event[] | false> => {
     return Array.isArray(eventsArray) ? eventsArray : [];
   } catch (error) {
     return handleApiError(error, true);
+  }
+};
+
+export const getEventById = async (eventId: string): Promise<Event | false> => {
+  try {
+    if (!eventId?.trim()) {
+      return false;
+    }
+
+    const response = await api.get<EventByIdApiResponse>(
+      `/api/v2/events/${eventId}`
+    );
+
+    return response.data.data;
+  } catch (error) {
+    return handleApiError(error);
   }
 };
 
@@ -121,25 +144,20 @@ export const updateEvent = async (
 };
 
 export const getAttendees = async (
-  id: string
-): Promise<AttendeesResponse | false> => {
+  eventId: string,
+  params: GetAttendeesParams = {}
+): Promise<PaginatedAttendeesResponse | false> => {
   try {
-    const token = getAuthToken();
-    const response = await axios.get(
-      `${backendConnection()}/api/events/attendees/${id}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    if (!eventId?.trim()) {
+      return false;
+    }
+
+    const response = await api.get<PaginatedAttendeesResponse>(
+      `/api/v2/events/${eventId}/attendees`,
+      { params }
     );
 
-    return {
-      data: response.data.data[0],
-      attendees: response.data.data[0].attendees,
-      merch: response.data.merch_data,
-    };
+    return response.data;
   } catch (error) {
     return handleApiError(error);
   }
@@ -329,6 +347,44 @@ export const addAttendee = async (
       ? error.response?.data?.message || "Something went wrong"
       : "Something went wrong";
     showToast("error", errorMessage);
+    return false;
+  }
+};
+
+export const addAttendeeV2 = async (
+  eventId: string,
+  payload: AddAttendeeV2Payload
+): Promise<AddAttendeeV2Response | false> => {
+  try {
+    if (!eventId?.trim()) {
+      showToast("error", "Event ID is required");
+      return false;
+    }
+
+    const response = await api.post<AddAttendeeV2Response>(
+      `/api/v2/events/${eventId}/attendees`,
+      payload
+    );
+
+    if (
+      response.data.data.isNewStudent &&
+      response.data.data.emailSent === false
+    ) {
+      showToast("warning", response.data.message);
+    } else {
+      showToast("success", response.data.message);
+    }
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
+      const message =
+        axiosError.response?.data?.message || "Failed to add attendee";
+      showToast("error", message);
+    } else {
+      console.error("Error adding attendee V2:", error);
+      showToast("error", "An unexpected error occurred");
+    }
     return false;
   }
 };

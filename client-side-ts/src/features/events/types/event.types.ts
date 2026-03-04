@@ -17,7 +17,20 @@ export interface Event {
   sales_data?: unknown[];
   totalUnitsSold?: number;
   totalRevenueAll?: number;
+  merch?: EventMerchMeta | null;
   [key: string]: unknown;
+}
+
+export interface EventSizeOption {
+  custom: boolean;
+  price: string;
+}
+
+export interface EventMerchMeta {
+  category: string | null;
+  type: string | null;
+  selectedSizes: Record<string, EventSizeOption>;
+  selectedVariations: string[];
 }
 
 export interface Attendee {
@@ -52,6 +65,35 @@ export interface AttendeesResponse {
   merch: MerchData;
 }
 
+export interface GetAttendeesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  campus?: string;
+  status?: Array<"present" | "absent">;
+  course?: string[];
+  yearLevel?: string[];
+  confirmedOn?: string;
+}
+
+export interface AttendeesPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface PaginatedAttendeesResponse {
+  data: Attendee[];
+  pagination: AttendeesPagination;
+  access?: {
+    isUcMainAdmin: boolean;
+    campusScope: string;
+  };
+}
+
 export interface EventCheckData {
   limit: number;
   currentCount: number;
@@ -84,7 +126,44 @@ export interface CreateEventResponse {
 export interface AddAttendeeFormData {
   eventId: string;
   attendeeId: string;
+  name?: string;
+  email?: string;
+  campus?: string;
+  course?: string;
+  year?: number;
+  shirtSize?: string;
+  shirtPrice?: number;
+  password?: string;
   [key: string]: unknown;
+}
+
+export interface AddAttendeeV2Payload {
+  studentId: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email: string;
+  course: string;
+  yearLevel: string;
+  shirtSize?: string;
+  password: string;
+}
+
+export interface AddAttendeeV2Response {
+  message: string;
+  data: {
+    isNewStudent: boolean;
+    emailSent?: boolean;
+    attendee: {
+      id_number: string;
+      name: string;
+      campus: string;
+      course: string;
+      year: number;
+      shirtSize: string;
+      shirtPrice: number;
+    };
+  };
 }
 
 export interface RemoveAttendeeFormData {

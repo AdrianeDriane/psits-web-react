@@ -34,6 +34,12 @@ import {
   ScanQRModal,
 } from "./modals";
 import type { FilterOptions, AttendeeFormData } from "./modals";
+import type {
+  AttendeesPagination,
+  GetAttendeesParams,
+  EventMerchMeta,
+} from "@/features/events/types/event.types";
+import { CampusView } from "@/components/common/CampusView";
 
 interface Attendee {
   id: string;
@@ -52,14 +58,22 @@ interface Attendee {
 interface AttendeesTableProps {
   venue: string;
   eventId: string;
+  campusCode: string;
+  adminCampus?: string;
+  merch?: EventMerchMeta | null;
 }
 
 export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   venue,
   eventId,
+  campusCode,
+  adminCampus,
+  merch,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [refreshTick, setRefreshTick] = useState(0);
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAddAttendeeOpen, setIsAddAttendeeOpen] = useState(false);
@@ -67,7 +81,16 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const [isMarkAttendanceOpen, setIsMarkAttendanceOpen] = useState(false);
   const [isScanQROpen, setIsScanQROpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Attendee | null>(null);
-  const [, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<AttendeesPagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({
     status: [],
     course: [],
@@ -75,116 +98,116 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     confirmedOn: undefined,
   });
 
-  // Attendees data from API
-  const [attendees, setAttendees] = useState<Attendee[]>(
-    Array.from({ length: 50 }, (_, i) => ({
-      id: `${i + 1}`,
-      name: "Jane Lapas Lopez",
-      email: "lopez.jane@gmail.com",
-      studentId: "23785371",
-      status: i % 5 === 1 ? "absent" : "present",
-      courseYear:
-        i % 3 === 0 ? "BSCS - 2" : i % 3 === 1 ? "BSIT - 1" : "BSIT - 3",
-      confirmedOn: i % 5 === 1 ? "--" : "Nov 20, 2025\n10:31 AM",
-      confirmedBy: i % 5 === 1 ? "--" : "Anton James...",
-      campus: "University of Cebu Main Campus",
-      shirtSize: i % 3 === 0 ? "Medium" : i % 3 === 1 ? "Large" : "Small",
-      shirtPrice: "250",
-    }))
-  );
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+      setCurrentPage(1);
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
 
   // Fetch attendees from API
   useEffect(() => {
+    let isMounted = true;
+
     const fetchAttendees = async () => {
       if (!eventId) return;
 
       setIsLoading(true);
-      const result = await getAttendees(eventId);
+      setLoadError(null);
+
+      const params: GetAttendeesParams = {
+        page: currentPage,
+        limit: pagination.limit,
+        campus: campusCode,
+        search: debouncedSearchQuery || undefined,
+        status:
+          activeFilters.status.length > 0 ? activeFilters.status : undefined,
+        course:
+          activeFilters.course.length > 0 ? activeFilters.course : undefined,
+        yearLevel:
+          activeFilters.yearLevel.length > 0
+            ? activeFilters.yearLevel
+            : undefined,
+        confirmedOn: activeFilters.confirmedOn
+          ? activeFilters.confirmedOn.toISOString().slice(0, 10)
+          : undefined,
+      };
+
+      const result = await getAttendees(eventId, params);
+      if (!isMounted) return;
+
       if (result) {
-        // Map API data to Attendee interface
-        const mappedAttendees: Attendee[] = result.attendees.map(
-          (attendee: any) => ({
-            id: attendee.id_number,
-            name: attendee.name,
-            email: attendee.email || `${attendee.id_number}@uc.edu.ph`,
-            studentId: attendee.id_number,
-            status: attendee.isPresent ? "present" : "absent",
-            courseYear: `${attendee.course} - ${attendee.year}`,
-            confirmedOn: attendee.transactDate
-              ? new Date(attendee.transactDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
-                  year: "numeric",
-                }) +
-                "\n" +
-                new Date(attendee.transactDate).toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "--",
-            confirmedBy: attendee.transactBy || "--",
-            campus: attendee.campus,
-            shirtSize: attendee.shirtSize,
-            shirtPrice: attendee.shirtPrice?.toString(),
-          })
-        );
+        const mappedAttendees: Attendee[] = result.data.map((attendee) => ({
+          id: attendee.id_number,
+          name: attendee.name,
+          email:
+            typeof attendee.email === "string" &&
+            attendee.email.trim().length > 0
+              ? attendee.email
+              : `${attendee.id_number}@uc.edu.ph`,
+          studentId: attendee.id_number,
+          status: attendee.isPresent ? "present" : "absent",
+          courseYear: `${attendee.course} - ${attendee.year}`,
+          confirmedOn: attendee.transactDate
+            ? new Date(attendee.transactDate).toLocaleDateString("en-US", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              }) +
+              "\n" +
+              new Date(attendee.transactDate).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "--",
+          confirmedBy: attendee.transactBy || "--",
+          campus: attendee.campus,
+          shirtSize: attendee.shirtSize,
+          shirtPrice: attendee.shirtPrice?.toString(),
+        }));
         setAttendees(mappedAttendees);
+        setSelectedAttendees([]);
+
+        const nextPage = result.pagination.page;
+        setPagination(result.pagination);
+
+        if (nextPage !== currentPage) {
+          setCurrentPage(nextPage);
+        }
+      } else {
+        setAttendees([]);
+        setSelectedAttendees([]);
+        setLoadError("Unable to load attendees.");
       }
+
       setIsLoading(false);
     };
+
     fetchAttendees();
-  }, [eventId]);
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    eventId,
+    campusCode,
+    currentPage,
+    pagination.limit,
+    debouncedSearchQuery,
+    activeFilters,
+    refreshTick,
+  ]);
 
-  // Filter attendees based on active filters and search query
-  const filteredAttendees = attendees.filter((attendee) => {
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        attendee.name.toLowerCase().includes(query) ||
-        attendee.email.toLowerCase().includes(query) ||
-        attendee.studentId.includes(query);
-      if (!matchesSearch) return false;
-    }
-
-    // Status filter
-    if (
-      activeFilters.status.length > 0 &&
-      !activeFilters.status.includes(attendee.status)
-    ) {
-      return false;
-    }
-
-    // Course filter
-    if (activeFilters.course.length > 0) {
-      const attendeeCourse = attendee.courseYear.split(" - ")[0];
-      if (!activeFilters.course.includes(attendeeCourse)) return false;
-    }
-
-    // Year level filter
-    if (activeFilters.yearLevel.length > 0) {
-      const attendeeYear = attendee.courseYear.split(" - ")[1];
-      if (!activeFilters.yearLevel.includes(attendeeYear)) return false;
-    }
-
-    // Date filter
-    if (activeFilters.confirmedOn && attendee.confirmedOn !== "--") {
-      const filterDate = activeFilters.confirmedOn.toLocaleDateString();
-      const attendeeDate = attendee.confirmedOn.split("\n")[0];
-      // Simple date comparison - you may want to improve this
-      if (!attendeeDate.includes(filterDate.split("/")[0])) return false;
-    }
-
-    return true;
-  });
-
-  // Pagination
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredAttendees.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedAttendees = filteredAttendees.slice(startIndex, endIndex);
-  const totalAttendees = filteredAttendees.length;
+  const paginatedAttendees = attendees;
+  const totalPages = pagination.totalPages;
+  const totalAttendees = pagination.total;
+  const startIndex = (pagination.page - 1) * pagination.limit;
+  const endIndex = startIndex + paginatedAttendees.length;
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -208,11 +231,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
 
   const handleApplyFilter = (filters: FilterOptions) => {
     setActiveFilters(filters);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   };
 
   const handleExportCSV = () => {
-    console.log("Export to CSV");
+    console.warn("Export to CSV");
   };
 
   const handleAddAttendee = () => {
@@ -246,6 +269,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     };
     setAttendees((prev) => [newAttendee, ...prev]);
     setCurrentPage(1);
+    setRefreshTick((prev) => prev + 1);
   };
 
   const handleScanQR = () => {
@@ -268,20 +292,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
       );
 
       if (result) {
-        const now = new Date();
-        const timestamp = `${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}\n${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`;
-        setAttendees((prev) =>
-          prev.map((a) =>
-            a.id === student.id
-              ? {
-                  ...a,
-                  status: "present",
-                  confirmedOn: timestamp,
-                  confirmedBy: "QR Scanner",
-                }
-              : a
-          )
-        );
+        setRefreshTick((prev) => prev + 1);
       }
     }
   };
@@ -320,28 +331,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
       );
 
       if (result) {
-        setAttendees((prev) =>
-          prev.map((attendee) =>
-            attendee.id === attendeeId
-              ? {
-                  ...attendee,
-                  status: "present",
-                  confirmedOn:
-                    new Date().toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "2-digit",
-                      year: "numeric",
-                    }) +
-                    "\n" +
-                    new Date().toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }),
-                  confirmedBy: "Admin",
-                }
-              : attendee
-          )
-        );
+        setRefreshTick((prev) => prev + 1);
       }
     }
   };
@@ -360,17 +350,22 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold">{venue}</h3>
         <div className="mt-2 flex w-full flex-row items-center gap-2 sm:mt-0 sm:w-auto">
-          <div className="flex-1 sm:flex-none">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddAttendee}
-              className="w-full cursor-pointer rounded-xl"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Attendee
-            </Button>
-          </div>
+          <CampusView
+            allowedCampuses={["UC-LM", "UC-PT", "UC-Banilad"]}
+            role="Admin"
+          >
+            <div className="flex-1 sm:flex-none">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddAttendee}
+                className="w-full cursor-pointer rounded-xl"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Attendee
+              </Button>
+            </div>
+          </CampusView>
           <div className="flex-1 sm:flex-none">
             <MarkAttendanceButton
               className="w-full"
@@ -443,7 +438,25 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedAttendees.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={8}
+                    className="text-muted-foreground py-12 text-center"
+                  >
+                    Loading attendees...
+                  </TableCell>
+                </TableRow>
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={8}
+                    className="text-muted-foreground py-12 text-center"
+                  >
+                    {loadError}
+                  </TableCell>
+                </TableRow>
+              ) : paginatedAttendees.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={8}
@@ -466,9 +479,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
                     <TableCell>
                       <div>
                         <p className="font-medium">{attendee.name}</p>
-                        <p className="text-muted-foreground text-sm">
-                          {attendee.email}
-                        </p>
                       </div>
                     </TableCell>
                     <TableCell>{attendee.studentId}</TableCell>
@@ -539,7 +549,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
                   if (currentPage > 1) setCurrentPage(currentPage - 1);
                 }}
                 className={
-                  currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                  !pagination.hasPreviousPage
+                    ? "pointer-events-none opacity-50"
+                    : ""
                 }
               />
             </PaginationItem>
@@ -596,7 +608,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
                   if (currentPage < totalPages) setCurrentPage(currentPage + 1);
                 }}
                 className={
-                  currentPage === totalPages
+                  !pagination.hasNextPage
                     ? "pointer-events-none opacity-50"
                     : ""
                 }
@@ -617,6 +629,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         onOpenChange={setIsAddAttendeeOpen}
         eventId={eventId}
         onAddAttendee={handleAddAttendeeSubmit}
+        adminCampus={adminCampus}
+        merch={merch}
       />
       <StudentDetailsModal
         open={isStudentDetailsOpen}
