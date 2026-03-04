@@ -1,7 +1,9 @@
-import { showToast } from "../../../utils/alertHelper";
-import backendConnection from "../../../api/backendApi";
-import axios, { AxiosError } from "axios";
+import api from "@/api/axios";
+import type { StudentProfile, StudentProfileResponse } from "@/features/student";
 import type { AxiosResponse } from "axios";
+import axios, { AxiosError } from "axios";
+import backendConnection from "../../../api/backendApi";
+import { showToast } from "../../../utils/alertHelper";
 
 interface ApiErrorResponse {
   message?: string;
@@ -225,6 +227,19 @@ export const searchStudentById = async (id_number: string): Promise<any> => {
     throw error?.response?.data?.message || "An error occurred while searching.";
   }
 };
+
+export const getStudentProfileV2 = async (id_number: string): Promise<StudentProfile> => {
+  try {
+    const response = await api.get<StudentProfileResponse>(`/api/v2/students/profile/${id_number}`);
+    if (response.status === 200) {
+      return response.data.data;
+    }
+    throw new Error("Failed to fetch student profile");
+  } catch (error: unknown) {
+    handleApiError(error);
+    throw error;
+  }
+}
 
 export const updateStudentYearLevelForCurrentYear = async (
   id_number: string,
