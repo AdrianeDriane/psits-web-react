@@ -32,6 +32,35 @@ export interface EventMerchMeta {
   selectedSizes: Record<string, EventSizeOption>;
   selectedVariations: string[];
 }
+// ─── Session Config Types ────────────────────────────────────────────────────
+export interface SessionConfigEntry {
+  enabled: boolean;
+  timeRange: string;
+}
+
+export type SessionConfig = Record<string, SessionConfigEntry>;
+
+// ─── Attendee Data for Frontend ──────────────────────────────────────────────
+export interface AttendeeData {
+  id_number: string;
+  name: string;
+  isAttended: boolean;
+  attendance: Record<string, { attended: boolean; timestamp?: string | null }>;
+}
+
+// ─── Frontend EventData (mapped from Event API response) ────────────────────
+export interface EventData {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  location?: string;
+  date: Date;
+  attendanceType: string;
+  attendees: AttendeeData[];
+  sessionConfig?: SessionConfig;
+  isPast?: boolean;
+}
 
 export interface Attendee {
   id_number: string;

@@ -1,6 +1,7 @@
+import api from "@/api/axios";
 import axios, { AxiosError } from "axios";
-import { showToast } from "../../../utils/alertHelper";
 import backendConnection from "../../../api/backendApi";
+import { showToast } from "../../../utils/alertHelper";
 import type {
   ApiErrorResponse,
   Event,
@@ -16,10 +17,10 @@ import type {
   AddAttendeeV2Response,
   RemoveAttendeeFormData,
   UpdateSettingsFormData,
+  AttendeesResponse,
   RaffleWinnerResponse,
   RemoveRaffleResponse,
 } from "../types/event.types";
-import api from "@/api/axios";
 
 const getAuthToken = (): string | null => {
   return sessionStorage.getItem("Token");
@@ -71,6 +72,17 @@ export const getEvents = async (): Promise<Event[] | false> => {
   } catch (error) {
     return handleApiError(error, true);
   }
+};
+/**
+ * GET /api/v2/events/my-events
+ *
+ * Returns all events where each event's `attendees` array contains only the
+ * requesting student's record (from the JWT), or an empty array if they are
+ * not listed.
+ */
+export const getMyEvents = async (): Promise<Event[]> => {
+  const response = await api.get<{ data: Event[] }>("/api/v2/events/my-events");
+  return Array.isArray(response.data.data) ? response.data.data : [];
 };
 
 export const getEventById = async (eventId: string): Promise<Event | false> => {

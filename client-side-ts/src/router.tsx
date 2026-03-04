@@ -1,35 +1,33 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
-import { MainLayout } from "./layouts/MainLayout";
+import { AdminCampusRouteGuard } from "./components/common/AdminCampusRouteGuard";
+import { AdminRouteGuard } from "./components/common/RouteGuards";
+import { StudentCampusRouteGuard } from "./components/common/StudentCampusRouteGuard";
 import { AdminLayout } from "./layouts/AdminLayout";
-import { Home } from "./pages/home";
-import { Events } from "./pages/events";
-import { Organizations } from "./pages/organizations";
-import { Resources } from "./pages/home/sections/Resources";
-import { Shop } from "./pages/orders/components/Shop";
-import { ProductDetailsPage } from "./pages/orders/components/ProductDetails";
-import { Cart } from "./pages/orders/components/Cart";
-import OTPCode from "./pages/auth/OtpCode";
-import { PrivacyPolicy } from "./pages/PrivacyPolicy";
-import { TermsOfCondition } from "./pages/TermsOfCondition";
+import { MainLayout } from "./layouts/MainLayout";
+import StudentLayout from "./layouts/StudentLayout";
 import EventManagement from "./pages/admin/EventManagement";
-import { ErrorPage } from "./pages/ErrorPage";
-import { UnderConstruction } from "./pages/UnderConstruction";
-import Login from "./pages/auth/Login";
-import Signup from "./pages/auth/SignUp";
+import EventsPage from "./pages/admin/EventsPage";
+import GeneralAdminPage from "./pages/admin/GeneralAdminPage";
+import { MainCampusFinancePage } from "./pages/admin/MainCampusFinancePage";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import Login from "./pages/auth/Login";
+import OTPCode from "./pages/auth/OtpCode";
 import SetNewPassword from "./pages/auth/SetNewPassword";
+import Signup from "./pages/auth/SignUp";
+import { ErrorPage } from "./pages/ErrorPage";
+import { Events } from "./pages/events";
+import { Home } from "./pages/home";
+import { Resources } from "./pages/home/sections/Resources";
+import { Cart } from "./pages/orders/components/Cart";
+import { ProductDetailsPage } from "./pages/orders/components/ProductDetails";
+import { Shop } from "./pages/orders/components/Shop";
+import { Organizations } from "./pages/organizations";
+import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import AccountSettings from "./pages/student/AccountSettings";
 import EventAttendance from "./pages/student/EventAttendance";
 import MyOrders from "./pages/student/MyOrders";
-import StudentLayout from "./layouts/StudentLayout";
-import { AdminRouteGuard } from "./components/common/RouteGuards";
-import { AdminCampusRouteGuard } from "./components/common/AdminCampusRouteGuard";
-import { StudentCampusRouteGuard } from "./components/common/StudentCampusRouteGuard";
-import { MainCampusFinancePage } from "./pages/admin/MainCampusFinancePage";
-import GeneralStudentPage from "./pages/student/GeneralStudentPage";
-import GeneralAdminPage from "./pages/admin/GeneralAdminPage";
-import MainCampusStudentPage from "./pages/student/MainCampusStudentPage";
-import EventsPage from "./pages/admin/EventsPage";
+import { TermsOfCondition } from "./pages/TermsOfCondition";
+import { UnderConstruction } from "./pages/UnderConstruction";
 
 const router = createBrowserRouter([
   {
@@ -47,26 +45,21 @@ const router = createBrowserRouter([
           { path: "resources", Component: Resources },
           { path: "shop", Component: Shop },
           { path: "shop/:id", Component: ProductDetailsPage },
-          { path: "cart", Component: Cart },
+          {
+            element: <StudentCampusRouteGuard allowedCampuses={["UC-Main"]} />,
+            children: [{ path: "cart", Component: Cart }],
+          },
           {
             path: "student",
             Component: StudentLayout,
             children: [
               { index: true, Component: AccountSettings },
               { path: "event-attendance", Component: EventAttendance },
-              { path: "my-orders", Component: MyOrders },
-              { path: "account-settings", Component: AccountSettings },
-              // TODO: Remove this sample
-              // Example of a general student page with campus-specific component
-              { path: "general", Component: GeneralStudentPage },
-              // TODO: Remove this sample
-              // Example of a campus-specific student route
               {
-                path: "main-campus",
                 element: (
                   <StudentCampusRouteGuard allowedCampuses={["UC-Main"]} />
                 ),
-                children: [{ index: true, Component: MainCampusStudentPage }],
+                children: [{ path: "my-orders", Component: MyOrders }],
               },
             ],
           },

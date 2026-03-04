@@ -1,10 +1,12 @@
-import React from "react";
-import { Link, useRouteError, isRouteErrorResponse } from "react-router";
-import { AlertCircle, Home } from "lucide-react";
 import { BackgroundText } from "@/components/common/BackgroundText";
+import { useAuth } from "@/features/auth";
+import { AlertCircle, Home } from "lucide-react";
+import React from "react";
+import { isRouteErrorResponse, Link, useRouteError } from "react-router";
 
 export const ErrorPage: React.FC = () => {
   const error = useRouteError();
+  const { user, isAuthenticated } = useAuth();
 
   let errorMessage: string = "An unexpected error occurred.";
   let errorTitle: string = "Oops! Something went wrong.";
@@ -29,6 +31,13 @@ export const ErrorPage: React.FC = () => {
     errorMessage = error;
   }
 
+  const dashboardHref =
+    isAuthenticated && user
+      ? user.role === "Admin"
+        ? "/admin/events"
+        : "/student/event-attendance"
+      : "/";
+
   return (
     <div className="bg-background text-foreground animate-in fade-in relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-6 text-center font-sans duration-500 select-none">
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -39,7 +48,6 @@ export const ErrorPage: React.FC = () => {
         <div className="animate-in zoom-in inline-block rounded-full bg-red-50 p-6 shadow-sm ring-8 ring-red-50/50 duration-300">
           <AlertCircle className="h-16 w-16 text-red-500" />
         </div>
-        {/* Background large text number */}
         <BackgroundText
           text={statusCode.toString()}
           parentStyle="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-full text-center scale-150"
@@ -55,13 +63,18 @@ export const ErrorPage: React.FC = () => {
 
         <div className="pt-8">
           <Link
-            to="/admin/events"
+            to={dashboardHref ?? "/"}
             className="btn btn-primary hover:shadow-primary/25 gap-2 shadow-lg transition-all duration-300 hover:-translate-y-1"
           >
             <Home className="h-5 w-5" />
-            Back to Home
+            {dashboardHref
+              ? user?.role === "Admin"
+                ? "Admin Dashboard"
+                : "My Dashboard"
+              : "Back to Home"}
           </Link>
         </div>
+
         <BackgroundText
           text="404"
           parentStyle="absolute -top-16 sm:-top-24 md:-top-32 lg:-top-44 xl:-top-56 left-1/2 -translate-x-1/2 w-full text-center -z-10"
