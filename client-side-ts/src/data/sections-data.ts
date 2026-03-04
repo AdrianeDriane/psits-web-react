@@ -32,6 +32,7 @@ import Alin from "../assets/Development Team 2025/20.png";
 import Barral from "../assets/Development Team 2025/22.png";
 import Laroco from "../assets/Development Team 2025/21.png";
 import Albeos from "../assets/Development Team 2025/23.png";
+import PersonPlaceholder from "../assets/person_placeholder.png";
 
 import Orientation from "../assets/orientation2025/1.jpg";
 import ICT from "../assets/ict-congress/1.jpg";
@@ -42,6 +43,12 @@ import EmbeddedSystems from "../assets/embedded/1.jpg";
 import UCCCSCares from "../assets/embedded/1.jpg";
 import UCIntramurals from "../assets/intramurals/1.jpg";
 import CCSAcquaintance from "../assets/acquaintance-party/CCS 4 (28).jpg";
+import AnnouncementImage from "../assets/orientation2025/1.jpg";
+import CollaborationImage from "../assets/ict-congress/4.jpg";
+import SocialConnectionsImage from "../assets/cebu-blockchain-conference/5.jpg";
+import EventsImage from "../assets/orientation2025/18.jpg";
+import LearningResourcesImage from "../assets/orientation2025/3.jpg";
+import CompetitionsImage from "../assets/awarding/4.jpg";
 
 // --- Home Banner Data ---
 export const homeBannerData = {
@@ -95,8 +102,7 @@ export const getInvolvedData = {
       description:
         "Don't miss out! Stay updated on PSITS-hosted workshops, hackathons, and more events. Follow us for more details!",
       icon: Bell,
-      image:
-        "https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1974&auto=format&fit=crop",
+      image: AnnouncementImage,
       className: "h-full",
     },
     {
@@ -104,8 +110,7 @@ export const getInvolvedData = {
       description:
         "Unleash your potential! Aspiring Developers, collaborate with us on cutting-edge projects on GitHub.",
       icon: Code2,
-      image:
-        "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop",
+      image: CollaborationImage,
       className: "h-full",
     },
     {
@@ -113,8 +118,7 @@ export const getInvolvedData = {
       description:
         "Build friendships, find mentors, and grow your network. Connect with like-minded peers and future colleagues!",
       icon: Users2,
-      image:
-        "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=2032&auto=format&fit=crop",
+      image: SocialConnectionsImage,
       className: "h-full",
     },
     {
@@ -122,8 +126,7 @@ export const getInvolvedData = {
       description:
         "From hackathons to seminars, participate in exciting events that sharpen your skills and expand your horizons.",
       icon: Calendar,
-      image:
-        "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop",
+      image: EventsImage,
       className: "h-full",
     },
     {
@@ -131,8 +134,7 @@ export const getInvolvedData = {
       description:
         "Access exclusive tutorials, study materials, and guides curated by fellow students and industry professionals.",
       icon: BookOpen,
-      image:
-        "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1973&auto=format&fit=crop",
+      image: LearningResourcesImage,
       className: "h-full",
     },
     {
@@ -140,8 +142,7 @@ export const getInvolvedData = {
       description:
         "Challenge yourself in coding contests, UI/UX battles, and tech quizzes. Showcase your talents and win prizes!",
       icon: Trophy,
-      image:
-        "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2090&auto=format&fit=crop",
+      image: CompetitionsImage,
       className: "h-full",
     },
   ],
@@ -255,35 +256,31 @@ export const upcomingEventsData = {
   events: [
     {
       id: 1,
-      title: "Acquaintance Party",
-      date: "11 August - 5:00 PM",
-      location: "SM Seaside City Cebu",
-      image:
-        "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069&auto=format&fit=crop",
+      title: "CCS Days",
+      date: "2 & 3 March - 8:00 AM",
+      location: "University of Cebu - Main Campus",
+      image: CCSDays,
     },
     {
       id: 2,
-      title: "CCS Days",
-      date: "25 February - 8:00 AM",
+      title: "UC Intramurals",
+      date: "4,5,6 March - 7:00 AM",
       location: "University of Cebu - Main Campus",
-      image:
-        "https://images.unsplash.com/photo-1540575861501-7ce0e22022f9?q=80&w=2070&auto=format&fit=crop",
+      image: UCIntramurals,
     },
     {
       id: 3,
-      title: "UC Intramurals",
-      date: "12 March - 7:00 AM",
-      location: "University of Cebu - Main Campus",
-      image:
-        "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2069&auto=format&fit=crop",
+      title: "Acquaintance Party",
+      date: "28 March - 1:00 PM",
+      location: "Mandani Bay",
+      image: CCSAcquaintance,
     },
     {
       id: 4,
-      title: "Programming Competition",
-      date: "15 April - 9:00 AM",
-      location: "CCS Laboratory",
-      image:
-        "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop",
+      title: "ICT Congress",
+      date: "April - 1:00 PM",
+      location: "Cebu Coliseum",
+      image: ICT,
     },
   ],
 };
@@ -299,6 +296,7 @@ export const pastEventsData = {
       id: 1,
       title: "CCS Orientation 2025",
       location: "University of Cebu Main Campus",
+      year: 2025,
       date: { month: "August", day: "20" },
       description:
         "The College of Computer Studies (CCS) at the University of Cebu Main Campus warmly welcomed its new batch of students during the CCS Orientation 2025 held on August 20, 2025. The event was designed to introduce freshmen to the college's programs, faculty, and student organizations.",
@@ -308,6 +306,7 @@ export const pastEventsData = {
       id: 2,
       title: "11th ICT Congress 2025",
       location: "SM Seaside City Cebu",
+      year: 2025,
       date: { month: "April", day: "12" },
       description:
         "The 11th ICT Congress 2025 at SM Seaside City Cebu was a landmark event that brought together IT enthusiasts, professionals, and students from across the region. The congress featured a series of keynote speeches, panel discussions, and workshops focused on the latest trends and innovations in information and communication technology.",
@@ -317,6 +316,7 @@ export const pastEventsData = {
       id: 3,
       title: "CCS Days",
       location: "University of Cebu Main Campus",
+      year: 2025,
       date: { month: "February", day: "12" },
       description:
         "CCS Days at the University of Cebu Main Campus was a vibrant celebration of technology, creativity, and community spirit. The event spanned several days and featured a variety of activities including coding competitions, hackathons, tech talks, and exhibitions showcasing student projects.",
@@ -326,6 +326,7 @@ export const pastEventsData = {
       id: 4,
       title: "Cebu Blockchain Conference 2025",
       location: "IEC Convention Center Cebu",
+      year: 2025,
       date: { month: "January", day: "17" },
       description:
         "The Cebu Blockchain Conference 2025 held at the IEC Convention Center Cebu was a groundbreaking event that delved into the transformative potential of blockchain technology. The conference attracted industry leaders, developers, entrepreneurs, and enthusiasts eager to explore the applications and implications of blockchain across various sectors.",
@@ -335,6 +336,7 @@ export const pastEventsData = {
       id: 5,
       title: "Nihonggo Culminating Activity 2024",
       location: "University of Cebu Main Campus",
+      year: 2024,
       date: { month: "December", day: "17" },
       description:
         "The Nihonggo Culminating Activity 2024 at the University of Cebu Main Campus was a festive event that marked the conclusion of the Nihonggo language program for the year. The activity showcased the progress and achievements of students who had been studying the Japanese language and culture throughout the semester.",
@@ -344,6 +346,7 @@ export const pastEventsData = {
       id: 6,
       title: "Embedded Systems and IOT Project Exhibit 2024",
       location: "University of Cebu Main Campus",
+      year: 2024,
       date: { month: "November", day: "17" },
       description:
         "The Embedded Systems and IoT Project Exhibit 2024 at the University of Cebu Main Campus was an exciting event that highlighted the innovative projects developed by students in the fields of embedded systems and the Internet of Things (IoT). The exhibit provided a platform for students to showcase their creativity, technical skills, and problem-solving abilities.",
@@ -353,6 +356,7 @@ export const pastEventsData = {
       id: 7,
       title: "UC CCS Cares and Internship 2024",
       location: "University of Cebu Main Campus",
+      year: 2024,
       date: { month: "November", day: "17" },
       description:
         "The UC CCS Cares and Internship 2024 program at the University of Cebu Main Campus was a commendable initiative that combined community service with practical work experience for students. The program aimed to foster a sense of social responsibility among students while providing them with valuable insights into their future careers.",
@@ -362,6 +366,7 @@ export const pastEventsData = {
       id: 8,
       title: "UC Intramurals",
       location: "University of Cebu Main Campus",
+      year: 2024,
       date: { month: "November", day: "20" },
       description:
         "The UC Intramurals at the University of Cebu Main Campus was a lively event that brought together students from various departments to compete in a range of sports and recreational activities. The intramurals fostered camaraderie, sportsmanship, and school spirit among participants and spectators alike.",
@@ -371,6 +376,7 @@ export const pastEventsData = {
       id: 9,
       title: "CCS Acquaintance Party 2024",
       location: "SM Seaside City Cebu",
+      year: 2024,
       date: { month: "November", day: "16" },
       description:
         "On November 16, 2024, the CCS Acquaintance Party brought together students, faculty, and alumni at SM Seaside City Cebu for a night inspired by the timeless allure of the Old Money theme. The event was a celebration of camaraderie, elegance, and the rich heritage of the College of Computer Studies (CCS) community.",
@@ -427,8 +433,7 @@ export const organizationSectionData: OrganizationSectionData = {
         "The primary student organization for Information Technology students, focusing on technical excellence and professional development.",
       content:
         "PSITS serves as the umbrella organization for all IT students, providing a platform for growth, collaboration, and innovation through various technical workshops, seminars, and networking events.",
-      image:
-        "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop",
+      image: ICT,
       advisors: [
         {
           name: "Engr. Dennis Durano",
@@ -462,12 +467,13 @@ export const organizationSectionData: OrganizationSectionData = {
           image: Alon,
           socials: { email: "jacinth@example.com", github: "jacinth" },
         },
-        {
-          name: "James Doe",
-          role: "Secretary",
-          image: Alon,
-          socials: { email: "james@example.com", github: "james" },
-        },
+        // TODO: Add photo for Secretary before uncommenting
+        // {
+        //   name: "James Doe",
+        //   role: "Secretary",
+        //   image: Alon,
+        //   socials: { email: "james@example.com", github: "james" },
+        // },
         {
           name: "Khrysha Español",
           role: "Assistant Treasurer",
@@ -567,6 +573,12 @@ export const organizationSectionData: OrganizationSectionData = {
           socials: { github: "johnsmith" },
         },
         {
+          name: "Mark Enfermo",
+          role: "Backend Developer",
+          image: PersonPlaceholder,
+          socials: { github: "johnsmith" },
+        },
+        {
           name: "Jan Lorenz Laroco",
           role: "Frontend Developer",
           image: Laroco,
@@ -575,7 +587,7 @@ export const organizationSectionData: OrganizationSectionData = {
         {
           name: "Froilan Kim Edem",
           role: "Fullstack Developer",
-          image: Barral,
+          image: PersonPlaceholder,
           socials: { github: "johnsmith" },
         },
         {
@@ -587,7 +599,7 @@ export const organizationSectionData: OrganizationSectionData = {
         {
           name: "Luke Harvey Umpad",
           role: "UI/UX Designer",
-          image: Barral,
+          image: PersonPlaceholder,
           socials: { github: "johnsmith" },
         },
       ],
@@ -595,8 +607,7 @@ export const organizationSectionData: OrganizationSectionData = {
         {
           name: "Alice Johnson",
           role: "Event Volunteer",
-          image:
-            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=1974&auto=format&fit=crop",
+          image: Genabio,
         },
       ],
     },
@@ -604,145 +615,145 @@ export const organizationSectionData: OrganizationSectionData = {
 };
 
 export const tutorials = {
-    firstYear: [
-      {
-        course: "CC-INTCOM11 Introduction to Computing",
-        link: "https://www.scribd.com/document/618644383/Introduction-to-Computing-1st-year-1st-semester",
-        image:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcPLG2rwvp9oN1C4XB4bEikx1h4AJVX6QRxw&s",
-      },
-      {
-        course: "CC-COMPROG11 Computer Programming 1",
-        link: "https://www.w3schools.com/c/c_intro.php",
-        image:
-          "https://w0.peakpx.com/wallpaper/757/901/HD-wallpaper-c-sharp-black-logo-programming-language-grid-metal-background-c-sharp-artwork-creative-programming-language-signs-c-sharp-logo.jpg",
-      },
-      {
-        course: "CC-COMPROG12 Computer Programming 2",
-        link: "https://www.w3schools.com/java/java_intro.asp",
-        image:
-          "https://4kwallpapers.com/images/wallpapers/java-black-2560x2560-16069.png",
-      },
-      {
-        course: "IT-WEBDEV11 Web Design & Development",
-        link: "https://www.w3schools.com/whatis/",
-        image:
-          "https://c8.alamy.com/comp/2C2MXR8/web-development-blue-color-text-on-dark-digital-background-2C2MXR8.jpg",
-      },
-      {
-        course: "CC-DISCRET12 Discrete Structures",
-        link: "https://www.csd.uwo.ca/~abrandt5/teaching/DiscreteStructures/intro.html",
-        image:
-          "https://www.shutterstock.com/image-vector/modern-color-thin-line-concept-600nw-511337065.jpg",
-      },
-    ],
-    secondYear: [
-      {
-        course: "CC-DIGILOG21 Digital Logic Design",
-        link: "https://www.geeksforgeeks.org/digital-electronics-logic-design-tutorials/",
-        image:
-          "https://as1.ftcdn.net/v2/jpg/01/22/17/08/1000_F_122170865_Cwufk4kjroqCSmWHmoj2BC4Cf0DJgvki.jpg",
-      },
-      {
-        course: "IT-OOPROG21 Object Oriented Programming",
-        link: "https://www.w3schools.com/java/java_oop.asp",
-        image:
-          "https://i.pinimg.com/originals/6e/12/6a/6e126a9ace040280e45f8144cf0cb2c8.jpg",
-      },
-      {
-        course: "IT-PLATECH22 Platform Technologies w/ Op. Sys.",
-        link: "https://www.geeksforgeeks.org/computer-organization-and-architecture-tutorials/",
-        image:
-          "https://w0.peakpx.com/wallpaper/408/520/HD-wallpaper-windows-10-dark-logo-windows-10-computer-dark-logo-black-thumbnail.jpg",
-      },
-      {
-        course: "IT-SAD21 System Analysis & Design",
-        link: "https://www.tutorialspoint.com/system_analysis_and_design/system_analysis_and_design_overview.htm",
-        image:
-          "https://c8.alamy.com/comp/2DCAAG7/analyst-working-with-business-analytics-and-data-management-system-on-computer-to-make-report-with-kpi-and-metrics-connected-to-database-corporate-st-2DCAAG7.jpg",
-      },
-      {
-        course: "CC-APPSDEV22 Applications Dev't & Emerging Tech.",
-        link: "https://www.geeksforgeeks.org/introduction-to-c-sharp-windows-forms-applications/",
-        image:
-          "https://c8.alamy.com/comp/2DC8EXR/asp-net-inscription-against-laptop-and-code-background-learn-dot-net-programming-language-computer-courses-training-2DC8EXR.jpg",
-      },
-      {
-        course: "CC-DASTRUC22 Data Structures & Algorithms",
-        link: "https://www.geeksforgeeks.org/data-structures/",
-        image:
-          "https://img.pikbest.com/ai/illus_our/20230427/8f6e83cf21979200459e5f74cf34c766.jpg!w700wp",
-      },
-      {
-        course: "CC-DATACOM22 Data Communications",
-        link: "https://www.cisco.com/c/m/en_sg/partners/cisco-networking-academy/index.html",
-        image:
-          "https://1000logos.net/wp-content/uploads/2016/11/cisco-symbol.jpg",
-      },
-    ],
-    thirdYear: [
-      {
-        course: "IT-IMDBSYS31 Information Management (DB Sys.1)",
-        link: "https://www.w3schools.com/sql/",
-        image: "https://cdn-icons-png.flaticon.com/512/5968/5968306.png",
-      },
-      {
-        course: "IT-IMDBSYS32 Information Management (DB Sys. 2)",
-        link: "https://www.mysqltutorial.org/",
-        image: "https://cdn-icons-png.flaticon.com/512/5968/5968306.png",
-      },
-      {
-        course: "IT-NETWORK31 Computer Networks",
-        link: "https://www.cisco.com/c/m/en_sg/partners/cisco-networking-academy/index.html",
-        image:
-          "https://1000logos.net/wp-content/uploads/2016/11/cisco-symbol.jpg",
-      },
-      {
-        course: "IT-INFOSEC32 Information Assurance & Security",
-        link: "https://picoctf.org",
-        image:
-          "https://media.istockphoto.com/id/1383553886/pt/vetorial/abstract-banner-cyber-security-in-3d-style-communication-technology-database-system.jpg?s=612x612&w=0&k=20&c=Z8QCU9l9StN9Yc45T4OcCJCr4dCqhq4YIAeCZKl_DIo=",
-      },
-      {
-        course: "IT-TESTQUA31 Testing & Quality Assurance",
-        link: "https://www.softwaretestinghelp.com/",
-        image:
-          "https://us.123rf.com/450wm/dizanna/dizanna2203/dizanna220301177/183888419-qa-quality-assurance-acronym-business-concept-background.jpg",
-      },
-      {
-        course: "IT-SYSARCH32 System Integration & Architecture",
-        link: "https://www.slideshare.net/slideshow/chapter-1-introduction-to-system-integration-and-architecturepdf/263057894",
-        image:
-          "https://png.pngtree.com/png-vector/20220521/ourmid/pngtree-icon-of-system-integration-a-minimalistic-blackandwhite-symbol-for-industry-40-templates-web-design-and-infographics-vector-png-image_46354724.jpg",
-      },
-      {
-        course: "CC-HCI31 Human Computer Interaction",
-        link: "https://www.simplilearn.com/what-is-human-computer-interaction-article#:~:text=Human-Computer%20Interaction%20is%20a,friendly%2C%20efficient%2C%20and%20enjoyable.",
-        image:
-          "https://www.ise.tu-darmstadt.de/media/ise/research_ise/research_topics/Human-Computer_Interaction_Logo2.jpg",
-      },
-      {
-        course: "CC-TECHNO32 Technopreneurship",
-        link: "https://www.entrepreneur.com/topic/technopreneurship",
-        image:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrwC759-O-IBokwPKPW862gha-jDGZ3OMQ2g&s",
-      },
+  firstYear: [
+    {
+      course: "CC-INTCOM11 Introduction to Computing",
+      link: "https://www.scribd.com/document/618644383/Introduction-to-Computing-1st-year-1st-semester",
+      image:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcPLG2rwvp9oN1C4XB4bEikx1h4AJVX6QRxw&s",
+    },
+    {
+      course: "CC-COMPROG11 Computer Programming 1",
+      link: "https://www.w3schools.com/c/c_intro.php",
+      image:
+        "https://w0.peakpx.com/wallpaper/757/901/HD-wallpaper-c-sharp-black-logo-programming-language-grid-metal-background-c-sharp-artwork-creative-programming-language-signs-c-sharp-logo.jpg",
+    },
+    {
+      course: "CC-COMPROG12 Computer Programming 2",
+      link: "https://www.w3schools.com/java/java_intro.asp",
+      image:
+        "https://4kwallpapers.com/images/wallpapers/java-black-2560x2560-16069.png",
+    },
+    {
+      course: "IT-WEBDEV11 Web Design & Development",
+      link: "https://www.w3schools.com/whatis/",
+      image:
+        "https://c8.alamy.com/comp/2C2MXR8/web-development-blue-color-text-on-dark-digital-background-2C2MXR8.jpg",
+    },
+    {
+      course: "CC-DISCRET12 Discrete Structures",
+      link: "https://www.csd.uwo.ca/~abrandt5/teaching/DiscreteStructures/intro.html",
+      image:
+        "https://www.shutterstock.com/image-vector/modern-color-thin-line-concept-600nw-511337065.jpg",
+    },
+  ],
+  secondYear: [
+    {
+      course: "CC-DIGILOG21 Digital Logic Design",
+      link: "https://www.geeksforgeeks.org/digital-electronics-logic-design-tutorials/",
+      image:
+        "https://as1.ftcdn.net/v2/jpg/01/22/17/08/1000_F_122170865_Cwufk4kjroqCSmWHmoj2BC4Cf0DJgvki.jpg",
+    },
+    {
+      course: "IT-OOPROG21 Object Oriented Programming",
+      link: "https://www.w3schools.com/java/java_oop.asp",
+      image:
+        "https://i.pinimg.com/originals/6e/12/6a/6e126a9ace040280e45f8144cf0cb2c8.jpg",
+    },
+    {
+      course: "IT-PLATECH22 Platform Technologies w/ Op. Sys.",
+      link: "https://www.geeksforgeeks.org/computer-organization-and-architecture-tutorials/",
+      image:
+        "https://w0.peakpx.com/wallpaper/408/520/HD-wallpaper-windows-10-dark-logo-windows-10-computer-dark-logo-black-thumbnail.jpg",
+    },
+    {
+      course: "IT-SAD21 System Analysis & Design",
+      link: "https://www.tutorialspoint.com/system_analysis_and_design/system_analysis_and_design_overview.htm",
+      image:
+        "https://c8.alamy.com/comp/2DCAAG7/analyst-working-with-business-analytics-and-data-management-system-on-computer-to-make-report-with-kpi-and-metrics-connected-to-database-corporate-st-2DCAAG7.jpg",
+    },
+    {
+      course: "CC-APPSDEV22 Applications Dev't & Emerging Tech.",
+      link: "https://www.geeksforgeeks.org/introduction-to-c-sharp-windows-forms-applications/",
+      image:
+        "https://c8.alamy.com/comp/2DC8EXR/asp-net-inscription-against-laptop-and-code-background-learn-dot-net-programming-language-computer-courses-training-2DC8EXR.jpg",
+    },
+    {
+      course: "CC-DASTRUC22 Data Structures & Algorithms",
+      link: "https://www.geeksforgeeks.org/data-structures/",
+      image:
+        "https://img.pikbest.com/ai/illus_our/20230427/8f6e83cf21979200459e5f74cf34c766.jpg!w700wp",
+    },
+    {
+      course: "CC-DATACOM22 Data Communications",
+      link: "https://www.cisco.com/c/m/en_sg/partners/cisco-networking-academy/index.html",
+      image:
+        "https://1000logos.net/wp-content/uploads/2016/11/cisco-symbol.jpg",
+    },
+  ],
+  thirdYear: [
+    {
+      course: "IT-IMDBSYS31 Information Management (DB Sys.1)",
+      link: "https://www.w3schools.com/sql/",
+      image: "https://cdn-icons-png.flaticon.com/512/5968/5968306.png",
+    },
+    {
+      course: "IT-IMDBSYS32 Information Management (DB Sys. 2)",
+      link: "https://www.mysqltutorial.org/",
+      image: "https://cdn-icons-png.flaticon.com/512/5968/5968306.png",
+    },
+    {
+      course: "IT-NETWORK31 Computer Networks",
+      link: "https://www.cisco.com/c/m/en_sg/partners/cisco-networking-academy/index.html",
+      image:
+        "https://1000logos.net/wp-content/uploads/2016/11/cisco-symbol.jpg",
+    },
+    {
+      course: "IT-INFOSEC32 Information Assurance & Security",
+      link: "https://picoctf.org",
+      image:
+        "https://media.istockphoto.com/id/1383553886/pt/vetorial/abstract-banner-cyber-security-in-3d-style-communication-technology-database-system.jpg?s=612x612&w=0&k=20&c=Z8QCU9l9StN9Yc45T4OcCJCr4dCqhq4YIAeCZKl_DIo=",
+    },
+    {
+      course: "IT-TESTQUA31 Testing & Quality Assurance",
+      link: "https://www.softwaretestinghelp.com/",
+      image:
+        "https://us.123rf.com/450wm/dizanna/dizanna2203/dizanna220301177/183888419-qa-quality-assurance-acronym-business-concept-background.jpg",
+    },
+    {
+      course: "IT-SYSARCH32 System Integration & Architecture",
+      link: "https://www.slideshare.net/slideshow/chapter-1-introduction-to-system-integration-and-architecturepdf/263057894",
+      image:
+        "https://png.pngtree.com/png-vector/20220521/ourmid/pngtree-icon-of-system-integration-a-minimalistic-blackandwhite-symbol-for-industry-40-templates-web-design-and-infographics-vector-png-image_46354724.jpg",
+    },
+    {
+      course: "CC-HCI31 Human Computer Interaction",
+      link: "https://www.simplilearn.com/what-is-human-computer-interaction-article#:~:text=Human-Computer%20Interaction%20is%20a,friendly%2C%20efficient%2C%20and%20enjoyable.",
+      image:
+        "https://www.ise.tu-darmstadt.de/media/ise/research_ise/research_topics/Human-Computer_Interaction_Logo2.jpg",
+    },
+    {
+      course: "CC-TECHNO32 Technopreneurship",
+      link: "https://www.entrepreneur.com/topic/technopreneurship",
+      image:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrwC759-O-IBokwPKPW862gha-jDGZ3OMQ2g&s",
+    },
 
-      {
-        course: "IT-INTPROG32 Integrative Prog'g & Technologies",
-        link: "https://learn.microsoft.com/en-us/aspnet/mvc/overview/getting-started/introduction/getting-started",
-        image:
-          "https://cdn.dribbble.com/users/42044/screenshots/3005802/media/18e91928154957a9baf2fcefbbd94f81.jpg?resize=400x300&vertical=center",
-      },
-    ],
-    fourthYear: [
-      {
-        course: "Hacker Rank",
-        link: "https://www.hackerrank.com",
-        image:
-          "https://upload.wikimedia.org/wikipedia/commons/4/40/HackerRank_Icon-1000px.png",
-      },
-    ],
-  };
+    {
+      course: "IT-INTPROG32 Integrative Prog'g & Technologies",
+      link: "https://learn.microsoft.com/en-us/aspnet/mvc/overview/getting-started/introduction/getting-started",
+      image:
+        "https://cdn.dribbble.com/users/42044/screenshots/3005802/media/18e91928154957a9baf2fcefbbd94f81.jpg?resize=400x300&vertical=center",
+    },
+  ],
+  fourthYear: [
+    {
+      course: "Hacker Rank",
+      link: "https://www.hackerrank.com",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/4/40/HackerRank_Icon-1000px.png",
+    },
+  ],
+};
 
 

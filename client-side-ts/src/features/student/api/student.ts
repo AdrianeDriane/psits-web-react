@@ -7,10 +7,6 @@ interface ApiErrorResponse {
   message?: string;
 }
 
-interface ApiSuccessResponse {
-  message: string;
-}
-
 interface CartItem {
   product_id?: string;
   product_name?: string;

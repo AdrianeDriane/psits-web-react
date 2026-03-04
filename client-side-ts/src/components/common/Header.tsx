@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { NavLink, Link, useLocation } from "react-router";
-import { Menu, X, ChevronDown, ShoppingCart } from "lucide-react";
+import { Menu, X, ChevronDown, ShoppingCart, LogOut, UserCircle } from "lucide-react";
 import {
   motion,
   AnimatePresence,
@@ -10,18 +10,26 @@ import {
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
   { name: "Home", href: "/" },
   { name: "Events", href: "/events" },
   { name: "Organizations", href: "/organizations" },
   { name: "Resources", href: "/resources" },
-  { name: "Shop", href: "/shop", hasDropdown: true },
+  { name: "Shop", href: "/shop", hasDropdown: false },
 ];
 
 export const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
   /* original imports */
   const { scrollY } = useScroll();
   const lastScrollY = useRef(0);
@@ -116,13 +124,39 @@ export const Header = () => {
             <span className="text-sm font-semibold hidden xl:inline">Cart</span>
           </Link>
 
-          {/* Join Us Button */}
-          <Button
-            asChild
-            className="h-9 rounded-full bg-[#1c9dde] px-4 font-semibold text-white shadow-md transition-all hover:bg-[#1c9dde]/90 active:scale-95 md:px-5"
-          >
-            <Link to="/auth/login">Sign in</Link>
-          </Button>
+          {/* User Profile or Sign In */}
+          {isAuthenticated && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-50">
+                  <UserCircle size={20} />
+                  <span className="text-sm font-semibold hidden xl:inline">{user.name || user.idNumber}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
+                    <UserCircle size={16} />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => logout()}
+                  className="flex items-center gap-2 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              asChild
+              className="h-9 rounded-full bg-[#1c9dde] px-4 font-semibold text-white shadow-md transition-all hover:bg-[#1c9dde]/90 active:scale-95 md:px-5"
+            >
+              <Link to="/auth/login">Sign in</Link>
+            </Button>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -170,30 +204,46 @@ export const Header = () => {
                   </NavLink>
                 ))}
                 <div className="mx-2 my-2 h-px bg-gray-100" />
-                <div className="flex flex-col gap-2">
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="w-full rounded-2xl py-6 text-base font-semibold"
-                  >
-                    <Link to="/auth/login" onClick={() => setIsOpen(false)}>
-                      Sign in
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    className="w-full rounded-2xl bg-[#1c9dde] py-6 text-base font-bold shadow-xl"
-                  >
-                    <Link to="/auth/signup" onClick={() => setIsOpen(false)}>
-                      Join Us
-                    </Link>
-                  </Button>
-                </div>
+                {isAuthenticated && user ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="px-4 py-3 rounded-2xl bg-primary/5">
+                      <p className="text-sm font-semibold text-gray-900">{user.name || user.idNumber}</p>
+                    </div>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="w-full rounded-2xl py-6 text-base font-semibold text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <button onClick={() => logout()}>Logout</button>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="w-full rounded-2xl py-6 text-base font-semibold"
+                    >
+                      <Link to="/auth/login" onClick={() => setIsOpen(false)}>
+                        Sign in
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      className="w-full rounded-2xl bg-[#1c9dde] py-6 text-base font-bold shadow-xl"
+                    >
+                      <Link to="/auth/signup" onClick={() => setIsOpen(false)}>
+                        Join Us
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </motion.nav>
-    </div>
+    </div >
   );
 };

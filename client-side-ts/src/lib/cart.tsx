@@ -57,7 +57,7 @@ function sanitizeStoredItem(obj: any): CartItem | null {
   
   const name = typeof obj.name === 'string' ? obj.name : '';
   const price = Number(obj.price);
-  const image = typeof obj.image === 'string' ? obj.image : '';
+
   let qty = Number(obj.qty) || 0;
 
   if (!Number.isFinite(price) || price < 0) return null;
