@@ -32,7 +32,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
     location,
     attendees,
     sessionConfig,
-    attendanceType,
     isPast,
   } = event;
   const { user: _user } = useAuth();
@@ -97,10 +96,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
     if (!attendees) return undefined;
     return attendees.find((att) => String(att.id_number) === String(studentId));
   }, [attendees, studentId]);
-
-  const canViewQr =
-    attendanceType === "open" ||
-    (attendanceType === "ticketed" && !!studentAttendee);
 
   // ── Attendance helpers ─────────────────────────────────────────────────────
   const hasAnyAttendance = useMemo(() => {

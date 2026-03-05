@@ -17,7 +17,6 @@ import type {
   AddAttendeeV2Response,
   RemoveAttendeeFormData,
   UpdateSettingsFormData,
-  AttendeesResponse,
   RaffleWinnerResponse,
   RemoveRaffleResponse,
 } from "../types/event.types";
