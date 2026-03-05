@@ -21,7 +21,7 @@ import orderRoutes from "./routes/orders.route";
 import privateRoutes from "./routes/private.route";
 import promoRoutes from "./routes/promo.route";
 import studentRoutes from "./routes/students.route";
-import studentV2Routes from './routes/studentsV2.route';
+import studentV2Routes from "./routes/studentsV2.route";
 import { errorHandler } from "./util/errors.util";
 
 //Declaration
@@ -37,7 +37,11 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.CORS,
+    origin: [
+      process.env.CORS || "",
+      process.env.CORS2 || "",
+      process.env.CORS3 || "",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
