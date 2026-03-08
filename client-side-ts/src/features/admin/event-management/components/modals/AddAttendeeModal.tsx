@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { X, Eye, EyeOff } from "lucide-react";
+import { X, Eye, EyeOff, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -164,6 +164,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const isShirtFieldVisible = useMemo(
     () => shouldShowShirtFields(merch),
@@ -336,6 +337,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
     setErrors({});
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setIsPreviewMode(false);
   };
 
   const handleCancel = () => {
@@ -343,8 +345,60 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
     onOpenChange(false);
   };
 
+  const handleContinueToPreview = () => {
+    if (!validateForm()) {
+      showToast("error", "Please complete required fields.");
+      return;
+    }
+    setIsPreviewMode(true);
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      handleReset();
+    }
+    onOpenChange(nextOpen);
+  };
+
+  const previewFullName = [
+    formData.firstName.trim(),
+    formData.middleName.trim(),
+    formData.lastName.trim(),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const previewInitials = `${formData.firstName.trim().charAt(0)}${formData.lastName
+    .trim()
+    .charAt(0)}`
+    .toUpperCase()
+    .trim();
+
+  const previewRows: Array<{ label: string; value: string }> = [
+    { label: "Student ID", value: formData.studentId.trim() || "--" },
+    { label: "First Name", value: formData.firstName.trim() || "--" },
+    { label: "Middle Name", value: formData.middleName.trim() || "--" },
+    { label: "Last Name", value: formData.lastName.trim() || "--" },
+    { label: "Email Address", value: formData.email.trim() || "--" },
+    { label: "Campus", value: formData.campus.trim() || "--" },
+    { label: "Course", value: formData.course.trim() || "--" },
+    { label: "Year Level", value: formData.yearLevel.trim() || "--" },
+    { label: "Initial Password", value: formData.password || "--" },
+  ];
+
+  if (isShirtFieldVisible) {
+    previewRows.push({
+      label: "Shirt Size",
+      value: formData.shirtSize.trim() || "--",
+    });
+    previewRows.push({
+      label: "Shirt Price",
+      value: formData.shirtPrice.trim() ? `PHP ${formData.shirtPrice}` : "--",
+    });
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent
         className="flex max-h-[80vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-lg p-0 sm:max-w-2xl sm:rounded-xl"
         showCloseButton={false}
@@ -352,7 +406,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
         <DialogHeader className="flex-none border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl leading-6 font-semibold">
-              Add Attendee
+              {isPreviewMode ? "Preview Attendee Details" : "Add Attendee"}
             </DialogTitle>
             <Button
               variant="ghost"
@@ -366,310 +420,399 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <div className="space-y-4">
-            {/* Student ID Number */}
-            <div>
-              <Label htmlFor="studentId" className="mb-2">
-                Student ID Number
-              </Label>
-              <Input
-                id="studentId"
-                placeholder="Enter student ID number"
-                value={formData.studentId}
-                onChange={(e) => handleChange("studentId", e.target.value)}
-              />
-              {errors.studentId ? (
-                <p className="text-destructive mt-1 text-xs">
-                  {errors.studentId}
+          {isPreviewMode ? (
+            <div className="space-y-6">
+              <div className="from-primary/10 to-primary/5 border-primary/20 rounded-xl border bg-gradient-to-r p-4">
+                <div className="flex items-start gap-4">
+                  <div className="bg-primary/15 text-primary flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold">
+                    {previewInitials || "--"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-base font-semibold">
+                      {previewFullName || "Unnamed Attendee"}
+                    </h3>
+                    <p className="text-muted-foreground mt-0.5 text-sm">
+                      {formData.email.trim() || "--"}
+                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Student ID:{" "}
+                      <span className="font-mono">
+                        {formData.studentId.trim() || "--"}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border">
+                <div className="bg-muted/20 space-y-0">
+                  {previewRows.map((field, index) => (
+                    <div
+                      key={field.label}
+                      className={`grid grid-cols-1 gap-1 px-4 py-3 md:grid-cols-[220px_1fr] md:gap-4 ${
+                        index !== previewRows.length - 1 ? "border-b" : ""
+                      }`}
+                    >
+                      <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                        {field.label}
+                      </p>
+                      <p className="text-sm leading-6 break-words">
+                        {field.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-amber-200 bg-amber-50/70 rounded-xl border px-4 py-3">
+                <p className="text-xs leading-relaxed text-amber-900">
+                  Please verify all values before submission. Accurate attendee
+                  records reduce account duplication, failed notifications, and
+                  reconciliation conflicts across modules.
                 </p>
-              ) : null}
-            </div>
-
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div>
-                <Label htmlFor="firstName" className="mb-2">
-                  First Name
-                </Label>
-                <Input
-                  id="firstName"
-                  placeholder="Enter first name"
-                  value={formData.firstName}
-                  onChange={(e) => handleChange("firstName", e.target.value)}
-                  maxLength={NAME_MAX_LENGTH}
-                />
-                {errors.firstName ? (
-                  <p className="text-destructive mt-1 text-xs">
-                    {errors.firstName}
-                  </p>
-                ) : null}
-              </div>
-              <div>
-                <Label htmlFor="middleName" className="mb-2">
-                  Middle Name{" "}
-                  <span className="text-muted-foreground font-normal">
-                    (Optional)
-                  </span>
-                </Label>
-                <Input
-                  id="middleName"
-                  placeholder="Enter middle name"
-                  value={formData.middleName}
-                  onChange={(e) => handleChange("middleName", e.target.value)}
-                  maxLength={NAME_MAX_LENGTH}
-                />
-                {errors.middleName ? (
-                  <p className="text-destructive mt-1 text-xs">
-                    {errors.middleName}
-                  </p>
-                ) : null}
-              </div>
-              <div>
-                <Label htmlFor="lastName" className="mb-2">
-                  Last Name
-                </Label>
-                <Input
-                  id="lastName"
-                  placeholder="Enter last name"
-                  value={formData.lastName}
-                  onChange={(e) => handleChange("lastName", e.target.value)}
-                  maxLength={NAME_MAX_LENGTH}
-                />
-                {errors.lastName ? (
-                  <p className="text-destructive mt-1 text-xs">
-                    {errors.lastName}
-                  </p>
-                ) : null}
               </div>
             </div>
-
-            {/* Email Address */}
-            <div>
-              <Label htmlFor="email" className="mb-2">
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter email address"
-                value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-              />
-              {errors.email ? (
-                <p className="text-destructive mt-1 text-xs">{errors.email}</p>
-              ) : null}
-            </div>
-
-            {/* Campus, Course, Year Level */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          ) : (
+            <div className="space-y-4">
+              {/* Student ID Number */}
               <div>
-                <Label htmlFor="campus" className="mb-2">
-                  Campus
+                <Label htmlFor="studentId" className="mb-2">
+                  Student ID Number
                 </Label>
                 <Input
-                  id="campus"
-                  value={formData.campus}
-                  disabled
-                  readOnly
-                  placeholder="Campus"
+                  id="studentId"
+                  placeholder="Enter student ID number"
+                  value={formData.studentId}
+                  onChange={(e) => handleChange("studentId", e.target.value)}
                 />
-                {errors.campus ? (
+                {errors.studentId ? (
                   <p className="text-destructive mt-1 text-xs">
-                    {errors.campus}
+                    {errors.studentId}
                   </p>
                 ) : null}
               </div>
-              <div>
-                <Label htmlFor="course" className="mb-2">
-                  Course
-                </Label>
-                <Select
-                  value={formData.course}
-                  onValueChange={(value) => handleChange("course", value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COURSE_OPTIONS.map((course) => (
-                      <SelectItem key={course} value={course}>
-                        {course}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.course ? (
-                  <p className="text-destructive mt-1 text-xs">
-                    {errors.course}
-                  </p>
-                ) : null}
-              </div>
-              <div>
-                <Label htmlFor="yearLevel" className="mb-2">
-                  Year Level
-                </Label>
-                <Select
-                  value={formData.yearLevel}
-                  onValueChange={(value) => handleChange("yearLevel", value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select year level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {YEAR_LEVEL_OPTIONS.map((year) => (
-                      <SelectItem key={year} value={year}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.yearLevel ? (
-                  <p className="text-destructive mt-1 text-xs">
-                    {errors.yearLevel}
-                  </p>
-                ) : null}
-              </div>
-            </div>
 
-            {/* Shirt Size and Price */}
-            {isShirtFieldVisible ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* Name Fields */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
-                  <Label htmlFor="shirtSize" className="mb-2">
-                    Shirt Size
+                  <Label htmlFor="firstName" className="mb-2">
+                    First Name
                   </Label>
-                  <Select
-                    value={formData.shirtSize}
-                    onValueChange={(value) => handleChange("shirtSize", value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {shirtSizeOptions.map((size) => (
-                        <SelectItem key={size} value={size}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.shirtSize ? (
+                  <Input
+                    id="firstName"
+                    placeholder="Enter first name"
+                    value={formData.firstName}
+                    onChange={(e) => handleChange("firstName", e.target.value)}
+                    maxLength={NAME_MAX_LENGTH}
+                  />
+                  {errors.firstName ? (
                     <p className="text-destructive mt-1 text-xs">
-                      {errors.shirtSize}
+                      {errors.firstName}
                     </p>
                   ) : null}
                 </div>
                 <div>
-                  <Label htmlFor="shirtPrice" className="mb-2">
-                    Price
+                  <Label htmlFor="middleName" className="mb-2">
+                    Middle Name{" "}
+                    <span className="text-muted-foreground font-normal">
+                      (Optional)
+                    </span>
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="shirtPrice"
-                      type="number"
-                      placeholder="Price"
-                      value={formData.shirtPrice}
-                      className="pr-12"
-                      disabled
-                      readOnly
-                    />
-                    <div className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium">
-                      PHP
+                  <Input
+                    id="middleName"
+                    placeholder="Enter middle name"
+                    value={formData.middleName}
+                    onChange={(e) => handleChange("middleName", e.target.value)}
+                    maxLength={NAME_MAX_LENGTH}
+                  />
+                  {errors.middleName ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.middleName}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <Label htmlFor="lastName" className="mb-2">
+                    Last Name
+                  </Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Enter last name"
+                    value={formData.lastName}
+                    onChange={(e) => handleChange("lastName", e.target.value)}
+                    maxLength={NAME_MAX_LENGTH}
+                  />
+                  {errors.lastName ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.lastName}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <Label htmlFor="email" className="mb-2">
+                  Email Address
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={formData.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                />
+                {errors.email ? (
+                  <p className="text-destructive mt-1 text-xs">{errors.email}</p>
+                ) : null}
+              </div>
+
+              {/* Campus, Course, Year Level */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <Label htmlFor="campus" className="mb-2">
+                    Campus
+                  </Label>
+                  <Input
+                    id="campus"
+                    value={formData.campus}
+                    disabled
+                    readOnly
+                    placeholder="Campus"
+                  />
+                  {errors.campus ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.campus}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <Label htmlFor="course" className="mb-2">
+                    Course
+                  </Label>
+                  <Select
+                    value={formData.course}
+                    onValueChange={(value) => handleChange("course", value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COURSE_OPTIONS.map((course) => (
+                        <SelectItem key={course} value={course}>
+                          {course}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.course ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.course}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <Label htmlFor="yearLevel" className="mb-2">
+                    Year Level
+                  </Label>
+                  <Select
+                    value={formData.yearLevel}
+                    onValueChange={(value) => handleChange("yearLevel", value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select year level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {YEAR_LEVEL_OPTIONS.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.yearLevel ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.yearLevel}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Shirt Size and Price */}
+              {isShirtFieldVisible ? (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="shirtSize" className="mb-2">
+                      Shirt Size
+                    </Label>
+                    <Select
+                      value={formData.shirtSize}
+                      onValueChange={(value) => handleChange("shirtSize", value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {shirtSizeOptions.map((size) => (
+                          <SelectItem key={size} value={size}>
+                            {size}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.shirtSize ? (
+                      <p className="text-destructive mt-1 text-xs">
+                        {errors.shirtSize}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div>
+                    <Label htmlFor="shirtPrice" className="mb-2">
+                      Price
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="shirtPrice"
+                        type="number"
+                        placeholder="Price"
+                        value={formData.shirtPrice}
+                        className="pr-12"
+                        disabled
+                        readOnly
+                      />
+                      <div className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium">
+                        PHP
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {/* Password Fields */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="password" className="mb-2">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={(e) => handleChange("password", e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="absolute top-1/2 right-2 -translate-y-1/2"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                {errors.password ? (
-                  <p className="text-destructive mt-1 text-xs">
-                    {errors.password}
+              {/* Password Fields */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="password" className="mb-2">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password"
+                      value={formData.password}
+                      onChange={(e) => handleChange("password", e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="absolute top-1/2 right-2 -translate-y-1/2"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {errors.password ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.password}
+                    </p>
+                  ) : null}
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Min. 8 characters with uppercase, lowercase, number &
+                    symbol
                   </p>
-                ) : null}
-                <p className="text-muted-foreground mt-1 text-xs">
-                  Min. 8 characters with uppercase, lowercase, number & symbol
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword" className="mb-2">
-                  Confirm Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm Password"
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      handleChange("confirmPassword", e.target.value)
-                    }
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="absolute top-1/2 right-2 -translate-y-1/2"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
                 </div>
-                {errors.confirmPassword ? (
-                  <p className="text-destructive mt-1 text-xs">
-                    {errors.confirmPassword}
-                  </p>
-                ) : null}
+                <div>
+                  <Label htmlFor="confirmPassword" className="mb-2">
+                    Confirm Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm Password"
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        handleChange("confirmPassword", e.target.value)
+                      }
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="absolute top-1/2 right-2 -translate-y-1/2"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {errors.confirmPassword ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.confirmPassword}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="bg-background flex flex-none items-center justify-end gap-3 border-t px-6 py-4">
-          <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            className="bg-[#1C9DDE] hover:bg-[#1C9DDE]"
-            disabled={isLoading}
-          >
-            {isLoading ? "Adding..." : "Add Attendee"}
-          </Button>
+          {isPreviewMode ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setIsPreviewMode(false)}
+                disabled={isLoading}
+              >
+                Back to Edit
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                className="bg-[#1C9DDE] hover:bg-[#1C9DDE]"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding Attendee...
+                  </>
+                ) : (
+                  "Confirm & Add Attendee"
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleContinueToPreview}
+                className="bg-[#1C9DDE] hover:bg-[#1C9DDE]"
+                disabled={isLoading}
+              >
+                Preview Details
+              </Button>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
