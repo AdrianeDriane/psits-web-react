@@ -5,7 +5,6 @@ import { Eye, EyeOff } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
   CardDescription,
