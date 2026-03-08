@@ -6,7 +6,7 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import cron from "node-cron";
 
-//Routes Import
+// Routes Import
 import { checkPromos } from "./custom_function/check_promo";
 import adminRoutes from "./routes/admin.route";
 import authV2Routes from "./routes/authV2.route";
@@ -24,10 +24,15 @@ import studentRoutes from "./routes/students.route";
 import studentV2Routes from "./routes/studentsV2.route";
 import { errorHandler } from "./util/errors.util";
 
-//Declaration
-const app: Express = express();
 dotenv.config();
-const PORT = process.env.PORT || 5000;
+
+const app: Express = express();
+
+const allowedOrigins = [
+  process.env.CORS,
+  process.env.CORS2,
+  process.env.CORS3,
+].filter((origin): origin is string => Boolean(origin));
 
 app.use(
   helmet({
@@ -37,28 +42,17 @@ app.use(
 
 app.use(
   cors({
-    origin: [
-      process.env.CORS || "",
-      process.env.CORS2 || "",
-      process.env.CORS3 || "",
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
 app.set("trust proxy", 1);
 app.use(bodyParser.json());
-mongoose
-  .connect(process.env.MONGODB_URI ?? "", {
-    dbName: process.env.DB_NAME ?? "psits-test",
-  })
-  .then(() =>
-    console.log("MongoDB PSITS Connected [" + process.env.DB_NAME + "]")
-  )
-  .catch((err: any) => console.log(err));
 
-//Routes
+// Routes
 app.use("/api", indexRoutes);
 app.use("/api", studentRoutes);
 app.use("/api/admin", adminRoutes);
@@ -76,12 +70,37 @@ app.use("/api/v2/students", studentV2Routes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server started, listening at port ${PORT}`);
-  //Check Promo
+async function startServer() {
+  try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error("Missing required env: MONGODB_URI");
+    }
 
-  cron.schedule("0 0 * * *", async () => {
-    console.log("Running daily promo check...");
-    await checkPromos();
-  });
-});
+    const port = Number(process.env.PORT) || 5000;
+
+    await mongoose.connect(process.env.MONGODB_URI, {
+      dbName: process.env.DB_NAME ?? "psits-test",
+    });
+
+    console.log(
+      `MongoDB PSITS Connected [${process.env.DB_NAME ?? "psits-test"}]`
+    );
+    console.log(
+      `Allowed CORS origins: ${allowedOrigins.length > 0 ? allowedOrigins.join(", ") : "none configured"}`
+    );
+
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`Server started, listening at port ${port}`);
+    });
+
+    cron.schedule("0 0 * * *", async () => {
+      console.log("Running daily promo check...");
+      await checkPromos();
+    });
+  } catch (error) {
+    console.error("Startup failed:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
