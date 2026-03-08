@@ -10,6 +10,7 @@ import { getEvents } from "../../api/event";
 import ads from "../../assets/images/ads.png";
 import { IctMessage } from "../Events.jsx";
 import { AkweMessage } from "../Events.jsx";
+import { OrientationMessage } from "../Events.jsx";
 import CircularGallery from '../../components/Image/CircularGallery';
 
 const Skeleton = ({ className }) => (
@@ -211,7 +212,9 @@ const StudentDashboard = () => {
               </span>
               <div className="flex-shrink-0">― ― ― ―</div>
             </div>
-
+            <div>
+              <IctMessage/>
+            </div>
             <div>
               <IntramsMessage />
             </div>

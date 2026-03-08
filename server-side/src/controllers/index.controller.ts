@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { Student } from "../models/student.model";
-import { Admin, IAdminDocument } from "../models/admin.model";
+import { Admin } from "../models/admin.model";
+import { IAdminDocument } from "../models/admin.interface";
 import { Log } from "../models/log.model";
 import { forgotPasswordMail } from "../mail_template/mail.template";
 import { Request, Response } from "express";
@@ -159,6 +160,7 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
       email: req.body.email,
       id_number: req.body.id_number,
     });
+    
     if (userAdmin) {
       user = userAdmin;
     } else if (getUser) {
@@ -185,10 +187,13 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
     const token = jwt.sign({ userId: user._id }, token_key, {
       expiresIn: "10m",
     });
+
     await forgotPasswordMail(req.body.email, url, token);
+
+    res.status(200).json({ message: "Email sent successfully! Please check your email for further instructions." });
   } catch (err) {
     console.error("Server error during forgot password process:", err);
-    res.status(500).send({ message: err });
+    res.status(500).send({ message: "Internal Server Error" });
   }
 };
 
@@ -230,6 +235,7 @@ export const resetPasswordController = async (req: Request, res: Response) => {
     res.status(200).send({ message: "Password updated" });
   } catch (err) {
     // Send error response if any error occurs
-    res.status(500).send({ message: err });
+    console.error("Server error during reset password process:", err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
