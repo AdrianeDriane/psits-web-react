@@ -25,6 +25,27 @@ interface StudentDetailsModalProps {
   } | null;
 }
 
+const DetailRow = ({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: React.ReactNode;
+  valueClassName?: string;
+}) => (
+  <div className="flex items-start justify-between gap-4">
+    <span className="text-muted-foreground text-sm">{label}</span>
+    <span
+      className={`max-w-[60%] text-right text-sm font-medium break-words ${
+        valueClassName ?? ""
+      }`}
+    >
+      {value}
+    </span>
+  </div>
+);
+
 export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   open,
   onOpenChange,
@@ -35,7 +56,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-full max-w-md gap-0 rounded-lg p-0 sm:max-w-xs sm:rounded-xl"
+        className="w-full max-w-md gap-0 rounded-lg p-0 sm:max-w-md sm:rounded-xl"
         showCloseButton={false}
       >
         <DialogHeader className="border-b px-6 py-4">
@@ -55,56 +76,27 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 px-6 py-6">
-          {/* Status */}
           {student.status && (
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-4">
               <span className="text-muted-foreground text-sm">Status</span>
               <Badge variant="outline">{student.status}</Badge>
             </div>
           )}
 
-          {/* Student ID */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Student ID</span>
-            <span className="text-sm font-medium">{student.studentId}</span>
-          </div>
+          <DetailRow label="Student ID" value={student.studentId} />
+          <DetailRow label="Name" value={student.name} />
+          <DetailRow label="Course & Year" value={student.courseYear} />
 
-          {/* Name */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Name</span>
-            <span className="text-sm font-medium">{student.name}</span>
-          </div>
-
-          {/* Course & Year */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Course & Year</span>
-            <span className="text-sm font-medium">{student.courseYear}</span>
-          </div>
-
-          {/* Campus */}
-          {student.campus && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Campus</span>
-              <span className="text-sm font-medium">{student.campus}</span>
-            </div>
-          )}
-
-          {/* Shirt Size */}
+          {student.campus && <DetailRow label="Campus" value={student.campus} />}
           {student.shirtSize && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Shirt Size</span>
-              <span className="text-sm font-medium">{student.shirtSize}</span>
-            </div>
+            <DetailRow label="Shirt Size" value={student.shirtSize} />
           )}
-
-          {/* Shirt Price */}
           {student.shirtPrice && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Shirt Price</span>
-              <span className="text-sm font-medium text-[#1C9DDE]">
-                ₱{student.shirtPrice}
-              </span>
-            </div>
+            <DetailRow
+              label="Shirt Price"
+              value={`PHP ${student.shirtPrice}`}
+              valueClassName="text-[#1C9DDE]"
+            />
           )}
         </div>
       </DialogContent>
