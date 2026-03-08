@@ -43,7 +43,7 @@ const staticNavLinks: NavLinkItem[] = [
     name: "Shop",
     href: "/shop",
     hasDropdown: false,
-    allowedCampus: ["UC-Main"],
+    allowedCampus: ["UC-Main", "UC-CS"],
   },
 ];
 
@@ -205,7 +205,7 @@ export const Header = () => {
           {/* Cart — only for authenticated UC-Main users */}
           {isAuthenticated && user ? (
             <CampusView
-              allowedCampuses={["UC-Main"]}
+              allowedCampuses={["UC-Main", "UC-CS"]}
               role={user.role === "Admin" ? "Admin" : "Student"}
             >
               <Link

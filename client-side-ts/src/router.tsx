@@ -1,5 +1,7 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
+import { AdminHomeRedirect } from "./components/common/AdminHomeRedirect";
 import { AdminCampusRouteGuard } from "./components/common/AdminCampusRouteGuard";
+import { PublicShopCampusGuard } from "./components/common/PublicShopCampusGuard";
 import { AdminRouteGuard } from "./components/common/RouteGuards";
 import { StudentCampusRouteGuard } from "./components/common/StudentCampusRouteGuard";
 import { AdminLayout } from "./layouts/AdminLayout";
@@ -13,10 +15,8 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import Login from "./pages/auth/Login";
 import OTPCode from "./pages/auth/OtpCode";
 import SetNewPassword from "./pages/auth/SetNewPassword";
-import Signup from "./pages/auth/SignUp";
 import { ErrorPage } from "./pages/ErrorPage";
 import { Events } from "./pages/events";
-import { Home } from "./pages/home";
 import { Resources } from "./pages/home/sections/Resources";
 import { Cart } from "./pages/orders/components/Cart";
 import { ProductDetailsPage } from "./pages/orders/components/ProductDetails";
@@ -39,15 +39,17 @@ const router = createBrowserRouter([
       {
         Component: MainLayout,
         children: [
-          { index: true, Component: Home },
+          { index: true, Component: AdminHomeRedirect },
           { path: "events", Component: Events },
           { path: "organizations", Component: Organizations },
           { path: "resources", Component: Resources },
-          { path: "shop", Component: Shop },
-          { path: "shop/:id", Component: ProductDetailsPage },
           {
-            element: <StudentCampusRouteGuard allowedCampuses={["UC-Main"]} />,
-            children: [{ path: "cart", Component: Cart }],
+            Component: PublicShopCampusGuard,
+            children: [
+              { path: "shop", Component: Shop },
+              { path: "shop/:id", Component: ProductDetailsPage },
+              { path: "cart", Component: Cart },
+            ],
           },
           {
             path: "student",
