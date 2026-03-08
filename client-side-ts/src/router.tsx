@@ -74,7 +74,7 @@ const router = createBrowserRouter([
         path: "auth",
         children: [
           { path: "login", Component: Login },
-          { path: "signup", Component: Signup },
+          { path: "signup", Component: UnderConstruction },
           { path: "forgot-password", Component: ForgotPassword },
           { path: "otp", Component: OTPCode },
           { path: "reset-password", Component: SetNewPassword },
