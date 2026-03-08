@@ -4,7 +4,6 @@ import { getAttendees } from "@/features/events/api/eventService";
 import { showToast } from "@/utils/alertHelper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -85,7 +84,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [refreshTick, setRefreshTick] = useState(0);
-  const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAddAttendeeOpen, setIsAddAttendeeOpen] = useState(false);
   const [isStudentDetailsOpen, setIsStudentDetailsOpen] = useState(false);
@@ -186,7 +184,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
           shirtPrice: attendee.shirtPrice?.toString(),
         }));
         setAttendees(mappedAttendees);
-        setSelectedAttendees([]);
 
         const nextPage = result.pagination.page;
         setPagination(result.pagination);
@@ -196,7 +193,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         }
       } else {
         setAttendees([]);
-        setSelectedAttendees([]);
         setLoadError("Unable to load attendees.");
       }
 
@@ -223,21 +219,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const startIndex = (pagination.page - 1) * pagination.limit;
   const endIndex = startIndex + paginatedAttendees.length;
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedAttendees(paginatedAttendees.map((a) => a.id));
-    } else {
-      setSelectedAttendees([]);
-    }
-  };
 
-  const handleSelectAttendee = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedAttendees((prev) => [...prev, id]);
-    } else {
-      setSelectedAttendees((prev) => prev.filter((aid) => aid !== id));
-    }
-  };
 
   const handleFilter = () => {
     setIsFilterOpen(true);
@@ -449,15 +431,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={
-                      paginatedAttendees.length > 0 &&
-                      selectedAttendees.length === paginatedAttendees.length
-                    }
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
                 <TableHead className="min-w-[200px]">Name</TableHead>
                 <TableHead className="min-w-[120px]">Student ID</TableHead>
                 <TableHead className="min-w-[100px]">Status</TableHead>
@@ -489,7 +462,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
               ) : paginatedAttendees.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={7}
                     className="text-muted-foreground py-12 text-center"
                   >
                     No attendees found
@@ -498,14 +471,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
               ) : (
                 paginatedAttendees.map((attendee) => (
                   <TableRow key={attendee.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedAttendees.includes(attendee.id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectAttendee(attendee.id, checked as boolean)
-                        }
-                      />
-                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{attendee.name}</p>

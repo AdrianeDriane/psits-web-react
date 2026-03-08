@@ -19,7 +19,7 @@ import logo from "@/assets/logo_forms_100x100.png";
 
 const formSchema = z.object({
   id: z.string().min(8, "ID Number must at least be 8 digits."),
-  password: z.string().min(8, "Password must at least be 8 characters"),
+  password: z.string(),
   rememberMe: z.boolean(),
 });
 
@@ -206,7 +206,7 @@ export default function LoginForm({ onLogin, isSubmitting }: LoginFormProps) {
           </form>
         </CardContent>
 
-        <CardFooter className="flex justify-center">
+        {/* <CardFooter className="flex justify-center">
           <p className="text-sm text-gray-500">
             Don't have an account?{" "}
             <Link
@@ -216,7 +216,7 @@ export default function LoginForm({ onLogin, isSubmitting }: LoginFormProps) {
               Sign up
             </Link>
           </p>
-        </CardFooter>
+        </CardFooter> */}
       </Card>
     </div>
   );
