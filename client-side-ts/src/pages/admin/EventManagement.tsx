@@ -61,7 +61,7 @@ const CAMPUS_CODE_TO_NAME: Record<Campus, string> = {
   "UC-Banilad": "University of Cebu Banilad Campus",
   "UC-LM": "University of Cebu Lapu-Lapu & Mandaue",
   "UC-PT": "University of Cebu Pardo & Talisay",
-  "UC-CS": "University of Cebu Main - Computer Science",
+  "UC-CS": "University of Cebu Main Campus",
 };
 
 const DEFAULT_CAMPUSES: Campus[] = [
@@ -69,8 +69,10 @@ const DEFAULT_CAMPUSES: Campus[] = [
   "UC-Banilad",
   "UC-LM",
   "UC-PT",
-  "UC-CS",
 ];
+
+const normalizeCampusForFilter = (campus: Campus): Campus =>
+  campus === "UC-CS" ? "UC-Main" : campus;
 
 const UNDER_CONSTRUCTION_MESSAGE =
   "This is under construction, visit legacy website to access this functionality.";
@@ -196,7 +198,7 @@ const mapApiEventToEventDetails = (
               ? String((item as { campus?: unknown }).campus ?? "")
               : "";
           if (campusCode in CAMPUS_CODE_TO_NAME) {
-            return campusCode as Campus;
+            return normalizeCampusForFilter(campusCode as Campus);
           }
           return null;
         })
@@ -275,25 +277,26 @@ const EventManagement: React.FC = () => {
       return [eventCampusCodes[0]];
     }
 
-    if (eventCampusCodes.includes(userCampus)) {
-      return [userCampus];
+    const normalizedUserCampus = normalizeCampusForFilter(userCampus);
+    if (eventCampusCodes.includes(normalizedUserCampus)) {
+      return [normalizedUserCampus];
     }
 
-    return [userCampus];
+    return [normalizedUserCampus];
   }, [eventDetails?.campusCodes, isAdmin, isUcMainAdmin, user?.campus]);
 
   const activeCampusValue =
-    activeCampus === "all"
+    isUcMainAdmin && activeCampus === "all"
       ? "all"
-      : availableCampusCodes.includes(activeCampus)
+      : activeCampus !== "all" && availableCampusCodes.includes(activeCampus)
         ? activeCampus
         : availableCampusCodes[0];
 
   const handleCampusChange = (campusCode: string) => {
-    if (campusCode === "all") {
+    if (campusCode === "all" && isUcMainAdmin) {
       setActiveCampus("all");
     } else if (campusCode in CAMPUS_CODE_TO_NAME) {
-      setActiveCampus(campusCode as Campus);
+      setActiveCampus(normalizeCampusForFilter(campusCode as Campus));
     }
   };
 
@@ -648,12 +651,14 @@ const EventManagement: React.FC = () => {
                       }}
                     >
                       <TabsList className="inline-flex w-max gap-2 rounded-none bg-transparent px-2">
-                        <TabsTrigger
-                          value="all"
-                          className="mx-1 cursor-pointer rounded-none !bg-transparent px-4 py-3 whitespace-nowrap hover:bg-transparent focus:bg-transparent data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[#1C9DDE] data-[state=active]:underline data-[state=active]:decoration-[#1C9DDE] data-[state=active]:decoration-2 data-[state=active]:underline-offset-11"
-                        >
-                          All Campuses
-                        </TabsTrigger>
+                        {isUcMainAdmin && (
+                          <TabsTrigger
+                            value="all"
+                            className="mx-1 cursor-pointer rounded-none !bg-transparent px-4 py-3 whitespace-nowrap hover:bg-transparent focus:bg-transparent data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[#1C9DDE] data-[state=active]:underline data-[state=active]:decoration-[#1C9DDE] data-[state=active]:decoration-2 data-[state=active]:underline-offset-11"
+                          >
+                            All Campuses
+                          </TabsTrigger>
+                        )}
                         {availableCampusCodes.map((campusCode) => (
                           <TabsTrigger
                             key={campusCode}
@@ -682,16 +687,18 @@ const EventManagement: React.FC = () => {
                     </button>
                   </div>
 
-                  <TabsContent value="all" className="mt-6">
-                    <AttendeesTable
-                      venue="All Campuses"
-                      eventId={eventDetails.id}
-                      campusCode="all"
-                      adminCampus={user?.campus}
-                      merch={eventDetails.merch}
-                      eventStatus={eventDetails.status}
-                    />
-                  </TabsContent>
+                  {isUcMainAdmin && (
+                    <TabsContent value="all" className="mt-6">
+                      <AttendeesTable
+                        venue="All Campuses"
+                        eventId={eventDetails.id}
+                        campusCode="all"
+                        adminCampus={user?.campus}
+                        merch={eventDetails.merch}
+                        eventStatus={eventDetails.status}
+                      />
+                    </TabsContent>
+                  )}
                   {availableCampusCodes.map((campusCode) => (
                     <TabsContent
                       key={campusCode}

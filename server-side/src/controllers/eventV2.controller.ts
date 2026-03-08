@@ -115,10 +115,22 @@ const parseYearLevelFilter = (value: unknown): number[] | undefined => {
 const parseRegisteredOn = (value: unknown): string | undefined => {
   if (typeof value !== "string" || !value.trim()) return undefined;
 
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return undefined;
+  const normalized = value.trim();
+  const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateOnlyPattern.test(normalized)) return undefined;
 
-  return parsed.toISOString().slice(0, 10);
+  const [year, month, day] = normalized.split("-").map((part) => Number(part));
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+
+  return normalized;
 };
 
 const normalizeAttendeeQueryParams = (req: Request): AttendeeQueryParams => {
@@ -178,6 +190,30 @@ const getAttendeeAttendanceStatuses = (
   return statuses;
 };
 
+const formatDateInTimeZone = (
+  dateValue: Date,
+  timeZone: string
+): string | null => {
+  if (Number.isNaN(dateValue.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(dateValue);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return `${year}-${month}-${day}`;
+};
+
 const isSameDay = (
   dateValue: Date | null | undefined,
   yyyyMmDd: string
@@ -187,7 +223,19 @@ const isSameDay = (
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return false;
 
-  return date.toISOString().slice(0, 10) === yyyyMmDd;
+  const attendeeDateInManila = formatDateInTimeZone(date, "Asia/Manila");
+  return attendeeDateInManila === yyyyMmDd;
+};
+
+const matchesCampusFilter = (
+  attendeeCampus: string,
+  campusFilter: string
+): boolean => {
+  if (campusFilter === "UC-Main") {
+    return attendeeCampus === "UC-Main" || attendeeCampus === "UC-CS";
+  }
+
+  return attendeeCampus === campusFilter;
 };
 
 const filterAttendees = (
@@ -195,7 +243,7 @@ const filterAttendees = (
   params: AttendeeQueryParams
 ): IAttendee[] => {
   return attendees.filter((attendee) => {
-    if (params.campus && attendee.campus !== params.campus) {
+    if (params.campus && !matchesCampusFilter(attendee.campus, params.campus)) {
       return false;
     }
 
@@ -435,9 +483,11 @@ export const getEventAttendeesV2Controller = async (
 
     const params = normalizeAttendeeQueryParams(req);
     const requesterCampus = claims.campus;
+    const requesterCampusScope =
+      requesterCampus === "UC-CS" ? "UC-Main" : requesterCampus;
     const isUcMainAdmin = requesterCampus === "UC-Main";
 
-    const effectiveCampus = isUcMainAdmin ? params.campus : requesterCampus;
+    const effectiveCampus = isUcMainAdmin ? params.campus : requesterCampusScope;
 
     const event = await Event.findOne(query).select("attendees eventId");
 

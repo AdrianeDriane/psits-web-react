@@ -536,6 +536,41 @@ export const approveOrderController = async (req: Request, res: Response) => {
 
               // Update merch (if isEvent) and create instance of it as event attendee
               if (merchToGet) {
+                const selectedSize =
+                  sizes.length > 0 ? String(sizes[0]).trim() : "";
+
+                let resolvedShirtPrice: number | null = null;
+
+                if (selectedSize && merchToGet.selectedSizes) {
+                  const selectedSizesMap = merchToGet.selectedSizes as
+                    | Map<string, { custom?: boolean; price?: string }>
+                    | Record<string, { custom?: boolean; price?: string }>;
+
+                  const sizeConfig =
+                    selectedSizesMap instanceof Map
+                      ? selectedSizesMap.get(selectedSize)
+                      : selectedSizesMap[selectedSize];
+
+                  const parsedSizePrice = Number(sizeConfig?.price);
+                  if (Number.isFinite(parsedSizePrice)) {
+                    resolvedShirtPrice = parsedSizePrice;
+                  }
+                }
+
+                if (resolvedShirtPrice === null) {
+                  const parsedOrderItemPrice = Number(item.price);
+                  if (Number.isFinite(parsedOrderItemPrice)) {
+                    resolvedShirtPrice = parsedOrderItemPrice;
+                  }
+                }
+
+                if (resolvedShirtPrice === null) {
+                  const parsedBasePrice = Number(merchToGet.price);
+                  if (Number.isFinite(parsedBasePrice)) {
+                    resolvedShirtPrice = parsedBasePrice;
+                  }
+                }
+
                 await Event.findOneAndUpdate(
                   {
                     eventId: merchId,
@@ -549,13 +584,18 @@ export const approveOrderController = async (req: Request, res: Response) => {
                         course: successfulOrder.course,
                         year: successfulOrder.year,
                         campus: student.campus,
+                        transactBy:
+                          successfulOrder.admin || admin || "System",
+                        transactDate: successfulOrder.transaction_date
+                          ? new Date(successfulOrder.transaction_date)
+                          : new Date(),
                         attendance: {
                           morning: { attended: false, timestamp: "" },
                           afternoon: { attended: false, timestamp: "" },
                           evening: { attended: false, timestamp: "" },
                         },
-                        shirtSize: sizes.length > 0 ? sizes[0] : null,
-                        shirtPrice: merchToGet?.price || null,
+                        shirtSize: selectedSize || null,
+                        shirtPrice: resolvedShirtPrice,
                       },
                     },
                   },
