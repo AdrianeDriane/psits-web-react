@@ -1,63 +1,149 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { Landmark } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CampusBreakdownEntry } from "@/features/events/types/event.types";
 
 interface CampusRevenueCardsProps {
   campusBreakdown: CampusBreakdownEntry[];
 }
 
-const CAMPUS_THEME: Record<string, { bg: string; hover: string }> = {
-  "UC-Main": { bg: "bg-[#002366]", hover: "hover:bg-[#001a4d]" },
-  "UC-Banilad": { bg: "bg-[#008000]", hover: "hover:bg-[#006400]" },
-  "UC-LM": { bg: "bg-[#800080]", hover: "hover:bg-[#660066]" },
-  "UC-PT": { bg: "bg-[#B8860B]", hover: "hover:bg-[#996F0B]" },
-  "UC-CS": { bg: "bg-[#D2691E]", hover: "hover:bg-[#A0522D]" },
+const CAMPUS_COLORS: Record<string, string> = {
+  "UC-Main": "#0E4A67",
+  "UC-LM": "#1E7AA8",
+  "UC-Banilad": "#2E9AD1",
+  "UC-PT": "#8ABFDB",
+  "UC-CS": "#B8D9EC",
 };
 
-const DEFAULT_THEME = { bg: "bg-gray-600", hover: "hover:bg-gray-700" };
+const DEFAULT_COLOR = "#9AAFC2";
 
 export const CampusRevenueCards: React.FC<CampusRevenueCardsProps> = ({
   campusBreakdown,
 }) => {
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Campus Revenue & Sales</h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {campusBreakdown.map((entry) => {
-          const theme = CAMPUS_THEME[entry.campus] || DEFAULT_THEME;
-          const displayName =
-            entry.campus === "UC-CS" ? "UC-Main CS" : entry.campus;
+  const chartData = campusBreakdown.map((entry) => ({
+    ...entry,
+    label:
+      entry.campus === "UC-CS"
+        ? "UC Main CS"
+        : entry.campus.replace("UC-", "UC "),
+    color: CAMPUS_COLORS[entry.campus] || DEFAULT_COLOR,
+  }));
 
-          return (
-            <Card
+  const hasData = chartData.some((entry) => entry.revenue > 0);
+
+  return (
+    <Card className="rounded-3xl border border-slate-200/80 bg-white/90 pt-5 shadow-sm">
+      <CardHeader className="space-y-4 pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-800">
+            <Landmark className="h-4 w-4 text-[#0E4A67]" />
+            Campus Revenue & Sales
+          </CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            {chartData.map((entry) => (
+              <div
+                key={entry.campus}
+                className="bg-muted/60 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs text-slate-600"
+              >
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: entry.color }}
+                />
+                {entry.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5 pt-1">
+        <div className="h-[280px]">
+          {hasData ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                margin={{ top: 12, right: 8, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  stroke="#E2E8F0"
+                  strokeDasharray="4 4"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 12, fill: "#64748B" }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 12, fill: "#64748B" }}
+                  tickFormatter={(value) =>
+                    value === 0 ? "0" : `₱${Math.round(Number(value) / 1000)}k`
+                  }
+                />
+                <Tooltip
+                  cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "1px solid #E2E8F0",
+                    boxShadow: "0 10px 26px rgba(15, 23, 42, 0.12)",
+                  }}
+                  formatter={(value: number | string, name) => {
+                    if (name === "revenue") {
+                      return [`₱${Number(value).toLocaleString()}`, "Revenue"];
+                    }
+                    return [value, name];
+                  }}
+                />
+                <Bar dataKey="revenue" radius={[12, 12, 0, 0]}>
+                  {chartData.map((entry) => (
+                    <Cell key={entry.campus} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-muted-foreground text-sm">
+                No campus revenue data
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {chartData.map((entry) => (
+            <div
               key={entry.campus}
-              className={`${theme.bg} ${theme.hover} border-0 transition-colors duration-200`}
+              className="bg-muted/30 space-y-1 rounded-2xl border border-slate-200/70 px-4 py-3"
             >
-              <CardContent className="p-5 text-center text-white">
-                <h4 className="mb-3 text-sm font-medium opacity-90">
-                  {displayName}
-                </h4>
-                <div className="space-y-1">
-                  <p className="text-sm">
-                    Registrations:{" "}
-                    <span className="font-bold">{entry.registrations}</span>
-                  </p>
-                  <p className="text-sm">
-                    Units Sold:{" "}
-                    <span className="font-bold">{entry.unitsSold}</span>
-                  </p>
-                  <p className="text-sm">
-                    Revenue:{" "}
-                    <span className="font-bold">
-                      ₱{entry.revenue.toLocaleString()}
-                    </span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
+              <p className="text-sm font-semibold text-slate-700">
+                {entry.label}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Registrations: {entry.registrations.toLocaleString()}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Units Sold: {entry.unitsSold.toLocaleString()}
+              </p>
+              <p className="text-sm font-semibold text-slate-800">
+                Revenue: ₱{entry.revenue.toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };

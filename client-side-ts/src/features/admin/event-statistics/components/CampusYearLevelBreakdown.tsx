@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import { School } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CampusBreakdownEntry } from "@/features/events/types/event.types";
 
@@ -16,7 +17,7 @@ interface CampusYearLevelBreakdownProps {
   campusBreakdown: CampusBreakdownEntry[];
 }
 
-const YEAR_COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"];
+const YEAR_COLORS = ["#0E4A67", "#1E7AA8", "#2E9AD1", "#8ABFDB"];
 
 const YEAR_LABELS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 
@@ -25,7 +26,8 @@ export const CampusYearLevelBreakdown: React.FC<
 > = ({ campusBreakdown }) => {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">
+      <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <School className="h-4 w-4 text-[#0E4A67]" />
         Registrations by Campus & Year Level
       </h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -52,13 +54,16 @@ export const CampusYearLevelBreakdown: React.FC<
           ];
 
           return (
-            <Card key={entry.campus}>
+            <Card
+              key={entry.campus}
+              className="rounded-3xl border border-slate-200/80 bg-white/90 pt-5 shadow-sm"
+            >
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">
+                <CardTitle className="text-sm font-semibold text-slate-700">
                   {displayName}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-1">
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -66,25 +71,29 @@ export const CampusYearLevelBreakdown: React.FC<
                       margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="opacity-30"
+                        stroke="#E2E8F0"
+                        strokeDasharray="4 4"
+                        vertical={false}
                       />
                       <XAxis
                         dataKey="year"
-                        tick={{ fontSize: 11 }}
+                        tick={{ fontSize: 11, fill: "#64748B" }}
                         tickLine={false}
+                        axisLine={false}
                         tickFormatter={(_, index) => YEAR_LABELS[index] || _}
                       />
                       <YAxis
-                        tick={{ fontSize: 11 }}
+                        tick={{ fontSize: 11, fill: "#64748B" }}
                         tickLine={false}
+                        axisLine={false}
                         allowDecimals={false}
                       />
                       <Tooltip
                         contentStyle={{
-                          borderRadius: "8px",
-                          border: "1px solid #e5e7eb",
+                          borderRadius: "12px",
+                          border: "1px solid #E2E8F0",
                           fontSize: "12px",
+                          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.1)",
                         }}
                         labelFormatter={(_, payload) => {
                           const index = chartData.findIndex(
@@ -96,7 +105,7 @@ export const CampusYearLevelBreakdown: React.FC<
                       <Bar
                         dataKey="count"
                         name="Students"
-                        radius={[4, 4, 0, 0]}
+                        radius={[10, 10, 0, 0]}
                       >
                         {chartData.map((_, index) => (
                           <Cell

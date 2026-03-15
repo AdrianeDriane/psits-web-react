@@ -8,7 +8,10 @@ export const StatisticsLoadingSkeleton: React.FC = () => {
       {/* Summary cards skeleton */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
+          <Card
+            key={i}
+            className="rounded-2xl border border-slate-200/80 bg-white/90 pt-5 shadow-sm"
+          >
             <CardContent className="flex items-center gap-4 p-5">
               <Skeleton className="h-12 w-12 rounded-lg" />
               <div className="space-y-2">
@@ -23,7 +26,10 @@ export const StatisticsLoadingSkeleton: React.FC = () => {
       {/* Charts skeleton */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
+          <Card
+            key={i}
+            className="rounded-3xl border border-slate-200/80 bg-white/90 pt-5 shadow-sm"
+          >
             <CardHeader className="pb-2">
               <Skeleton className="h-5 w-40" />
             </CardHeader>
@@ -35,7 +41,7 @@ export const StatisticsLoadingSkeleton: React.FC = () => {
       </div>
 
       {/* Timeline skeleton */}
-      <Card>
+      <Card className="rounded-3xl border border-slate-200/80 bg-white/90 pt-5 shadow-sm">
         <CardHeader className="pb-2">
           <Skeleton className="h-5 w-48" />
         </CardHeader>

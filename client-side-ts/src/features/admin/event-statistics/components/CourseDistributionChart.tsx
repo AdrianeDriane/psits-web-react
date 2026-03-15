@@ -1,13 +1,8 @@
 import React from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { BookOpenText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { DistributionData } from "@/features/events/types/event.types";
 
 interface CourseDistributionChartProps {
@@ -26,57 +21,110 @@ const COURSE_COLORS = [
 export const CourseDistributionChart: React.FC<
   CourseDistributionChartProps
 > = ({ data }) => {
-  const chartData = Object.entries(data.registered).map(([key, value]) => ({
-    name: key,
-    value,
-  }));
+  const chartData = Object.entries(data.registered).map(
+    ([key, value], index) => ({
+      name: key,
+      value,
+      attended: data.attended[key] || 0,
+      color: COURSE_COLORS[index % COURSE_COLORS.length],
+    })
+  );
 
+  const totalRegistered = chartData.reduce((sum, item) => sum + item.value, 0);
   const hasData = chartData.some((d) => d.value > 0);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold">
-          Course Distribution
-        </CardTitle>
+    <Card className="rounded-3xl border border-slate-200/80 bg-white/90 pt-5 shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-800">
+            <BookOpenText className="h-4 w-4 text-[#0E4A67]" />
+            Registered Students
+          </CardTitle>
+          <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
+            Course
+          </Badge>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[280px]">
-          {hasData ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  dataKey="value"
-                  stroke="#fff"
-                  strokeWidth={2}
-                >
-                  {chartData.map((_, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COURSE_COLORS[index % COURSE_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    fontSize: "13px",
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: "13px" }} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-muted-foreground text-sm">No course data</p>
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(180px,1.1fr)]">
+          <div className="space-y-4">
+            <div>
+              <p className="text-4xl leading-none font-semibold text-slate-800">
+                {totalRegistered.toLocaleString()}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Total Registered Students
+              </p>
             </div>
-          )}
+            <div className="max-h-[170px] space-y-2 overflow-y-auto pr-1">
+              {chartData.map((entry) => (
+                <div
+                  key={entry.name}
+                  className="bg-muted/50 flex items-center justify-between rounded-full px-3 py-1.5"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="text-sm text-slate-700">{entry.name}</span>
+                  </div>
+                  <span className="text-muted-foreground text-xs">
+                    {entry.value.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-[230px] md:h-[250px]">
+            {hasData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={58}
+                    outerRadius={95}
+                    dataKey="value"
+                    paddingAngle={4}
+                    cornerRadius={8}
+                    stroke="none"
+                  >
+                    {chartData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    cursor={false}
+                    formatter={(value: number | string, _name, item) => {
+                      const payload = item?.payload as {
+                        attended?: number;
+                      };
+                      return [
+                        `${Number(value).toLocaleString()} registered (${(payload.attended || 0).toLocaleString()} attended)`,
+                      ];
+                    }}
+                    contentStyle={{
+                      borderRadius: "999px",
+                      border: "0",
+                      backgroundColor: "rgba(30, 41, 59, 0.92)",
+                      color: "#E2E8F0",
+                      boxShadow: "0 8px 24px rgba(15, 23, 42, 0.22)",
+                    }}
+                    itemStyle={{ color: "#E2E8F0" }}
+                    labelStyle={{ color: "#E2E8F0" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-sm">No course data</p>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
