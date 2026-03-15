@@ -193,6 +193,7 @@ export interface AddAttendeeV2Payload {
   course: string;
   yearLevel: string;
   shirtSize?: string;
+  shirtPrice: number;
   password: string;
 }
 
