@@ -85,9 +85,6 @@ const matchesCampusScope = (
   attendeeCampus: string,
   campusFilter: string
 ): boolean => {
-  if (campusFilter === "UC-Main") {
-    return attendeeCampus === "UC-Main" || attendeeCampus === "UC-CS";
-  }
   return attendeeCampus === campusFilter;
 };
 

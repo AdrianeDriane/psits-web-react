@@ -232,10 +232,6 @@ const matchesCampusFilter = (
   attendeeCampus: string,
   campusFilter: string
 ): boolean => {
-  if (campusFilter === "UC-Main") {
-    return attendeeCampus === "UC-Main" || attendeeCampus === "UC-CS";
-  }
-
   return attendeeCampus === campusFilter;
 };
 
@@ -484,13 +480,11 @@ export const getEventAttendeesV2Controller = async (
 
     const params = normalizeAttendeeQueryParams(req);
     const requesterCampus = claims.campus;
-    const requesterCampusScope =
-      requesterCampus === "UC-CS" ? "UC-Main" : requesterCampus;
     const isUcMainAdmin = requesterCampus === "UC-Main";
 
     const effectiveCampus = isUcMainAdmin
       ? params.campus
-      : requesterCampusScope;
+      : requesterCampus;
 
     const event = await Event.findOne(query).select("attendees eventId");
 
@@ -1064,10 +1058,8 @@ export const getEventStatisticsV2Controller = async (
     }
 
     const requesterCampus = claims.campus;
-    const requesterCampusScope =
-      requesterCampus === "UC-CS" ? "UC-Main" : requesterCampus;
-    const isUcMainAdmin = requesterCampusScope === "UC-Main";
-    const campusScope = isUcMainAdmin ? "all" : requesterCampusScope;
+    const isUcMainAdmin = requesterCampus === "UC-Main";
+    const campusScope = isUcMainAdmin ? "all" : requesterCampus;
 
     const event = await Event.findOne(query).select(
       "attendees sales_data totalRevenueAll totalUnitsSold eventId"
@@ -1092,7 +1084,7 @@ export const getEventStatisticsV2Controller = async (
       data: statistics,
       access: {
         isUcMainAdmin,
-        campusScope: campusScope === "all" ? "all" : requesterCampusScope,
+        campusScope: campusScope === "all" ? "all" : requesterCampus,
       },
     });
   } catch (error) {
