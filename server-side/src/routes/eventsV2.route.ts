@@ -12,6 +12,7 @@ import {
   getEventByIdV2Controller,
   getEventStatisticsV2Controller,
   getMyEventsController,
+  markAttendanceV2Controller,
 } from "../controllers/eventV2.controller";
 
 const router = Router();
@@ -63,6 +64,14 @@ router.post(
   requireAccessTokenWithDBCheck,
   roleAuthenticateV2(["Admin"]),
   addAttendeeV2Controller
+);
+
+// PUT mark attendance for a specific attendee in an event
+router.put(
+  "/:eventId/attendance/:idNumber",
+  requireAccessTokenWithDBCheck,
+  roleAuthenticateV2(["Admin"]),
+  markAttendanceV2Controller
 );
 
 export default router;

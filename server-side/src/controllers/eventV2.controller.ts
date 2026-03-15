@@ -4,10 +4,16 @@ import mongoose from "mongoose";
 import { attendeeRegistrationMail } from "../mail_template/mail.template";
 import { IAttendee } from "../models/attendee.interface";
 import { IEvent } from "../models/event.interface";
+import { Admin } from "../models/admin.model";
 import { Event } from "../models/event.model";
 import { Merch } from "../models/merch.model";
 import { Student } from "../models/student.model";
 import { computeEventStatistics } from "../services/eventStatistics.service";
+import {
+  markAttendance,
+  AttendanceError,
+  ATTENDANCE_ERROR_STATUS_MAP,
+} from "../services/attendance.service";
 
 /**
  * Returns a Date object representing the start of the day (00:00:00)
@@ -482,9 +488,7 @@ export const getEventAttendeesV2Controller = async (
     const requesterCampus = claims.campus;
     const isUcMainAdmin = requesterCampus === "UC-Main";
 
-    const effectiveCampus = isUcMainAdmin
-      ? params.campus
-      : requesterCampus;
+    const effectiveCampus = isUcMainAdmin ? params.campus : requesterCampus;
 
     const event = await Event.findOne(query).select("attendees eventId");
 
@@ -1090,5 +1094,73 @@ export const getEventStatisticsV2Controller = async (
   } catch (error) {
     console.error("Error fetching event statistics:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+// ─── Mark Attendance V2 ─────────────────────────────────────────────────────
+
+export const markAttendanceV2Controller = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const claims = req.userV2;
+    if (!claims || claims.role !== "Admin") {
+      return res.status(403).json({
+        error: "INSUFFICIENT_PERMISSIONS",
+        message: "Admin access required",
+      });
+    }
+
+    const { eventId, idNumber } = req.params;
+    const { campus, attendeeName, course, year } = req.body;
+
+    // Basic body validation
+    if (!idNumber?.trim()) {
+      return res
+        .status(400)
+        .json({ error: "VALIDATION", message: "Student ID is required" });
+    }
+    if (!attendeeName?.trim()) {
+      return res
+        .status(400)
+        .json({ error: "VALIDATION", message: "Attendee name is required" });
+    }
+    if (!campus?.trim()) {
+      return res
+        .status(400)
+        .json({ error: "VALIDATION", message: "Campus is required" });
+    }
+
+    // Resolve admin display name for confirmedBy
+    const admin = await Admin.findById(claims.sub).select("name");
+    const adminName = admin?.name ?? claims.idNumber;
+
+    const result = await markAttendance({
+      eventId,
+      attendeeIdNumber: idNumber.trim(),
+      attendeeName: attendeeName.trim(),
+      campus: campus.trim(),
+      course: course?.trim() || "Unknown",
+      year: Number(year) || 1,
+      confirmedByAdminName: adminName,
+    });
+
+    return res.status(200).json({
+      message: `Attendance for ${result.session} successfully recorded`,
+      session: result.session,
+      data: result.attendee,
+      isNewAttendee: result.isNewAttendee,
+    });
+  } catch (error) {
+    if (error instanceof AttendanceError) {
+      const status = ATTENDANCE_ERROR_STATUS_MAP[error.code] || 400;
+      return res
+        .status(status)
+        .json({ error: error.code, message: error.message });
+    }
+    console.error("Error in markAttendanceV2Controller:", error);
+    return res
+      .status(500)
+      .json({ error: "INTERNAL_ERROR", message: "Internal server error" });
   }
 };
