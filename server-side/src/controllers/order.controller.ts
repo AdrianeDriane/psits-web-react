@@ -807,3 +807,79 @@ export const refund = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const getAllRefund = async (req: Request, res: Response) => {
+  try {
+
+    const refunds = await Refund.aggregate([
+
+      // Join Orders collection
+      {
+        $lookup: {
+          from: "orders",
+          localField: "order_id",
+          foreignField: "_id",
+          as: "order"
+        }
+      },
+
+    
+      {
+        $unwind: "$order"
+      },
+
+      {
+        $project: {
+          product_id: 1,
+          product_name: 1,
+          refund_price: 1,
+          refund_date: 1,
+          order_reference: 1,
+
+          order_details: {
+            student_name: "$order.student_name",
+            course: "$order.course",
+            year: "$order.year",
+            id_number: "$order.id_number",
+            admin_name: "$refund_admin"
+          }
+        }
+      },
+
+      {
+        $group: {
+          _id: "$product_id",
+          product_name: { $first: "$product_name" },
+          total_refunds: { $sum: 1 },
+          total_refund_amount: { $sum: "$refund_price" },
+          refunds: { $push: "$$ROOT" }
+        }
+      },
+
+    
+      {
+        $project: {
+          _id: 0,
+          product_id: "$_id",
+          product_name: 1,
+          total_refunds: 1,
+          refunds: 1
+        }
+      }
+
+    ]);
+
+    if (refunds.length > 0) {
+      return res.status(200).json({ data: refunds });
+    }
+
+    return res.status(404).json({ message: "No refunds found" });
+
+  } catch (error) {
+    console.error("Error fetching refunds:", error);
+
+    return res.status(500).json({
+      message: "Internal Server Error"
+    });
+  }
+};

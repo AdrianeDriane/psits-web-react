@@ -33,3 +33,24 @@ export const refund = async (order_id) => {
     console.error("Error:", error);
   }
 };
+
+export const getAllRefunds = async () => {
+  try {
+    const response = await axios.get(`${backendConnection()}/api/orders/get-refund`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (response.status === 200) {
+      return response.data;
+    } 
+  } catch (error) {
+    if (error.response && error.response.data) {
+      return false;
+    } else {
+      console.log("error", "An error occurred");
+      return false;
+    }
+  }
+};

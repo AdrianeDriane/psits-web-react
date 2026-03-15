@@ -221,7 +221,7 @@ const App = () => {
 
              
             </Route>
-               <Route path="refund/view/:id"
+               <Route path="refund/view"
             element={<PrivateRouteAdmin element={ViewRefund} />}/> 
           <Route
             path="reports"

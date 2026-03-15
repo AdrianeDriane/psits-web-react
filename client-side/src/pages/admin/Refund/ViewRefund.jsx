@@ -1,35 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { formattedDate } from "../../../components/tools/clientTools";
 
 const ViewRefund = () => {
-  const refundRequests = [
-    {
-      id: 1,
-      student: "John Doe",
-      studentId: "2023-001",
-      item: "School Hoodie",
-      reason: "Wrong size",
-      date: "2026-03-10",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      student: "Maria Santos",
-      studentId: "2023-015",
-      item: "School Hoodie",
-      reason: "Defective item",
-      date: "2026-03-11",
-      status: "Approved",
-    },
-    {
-      id: 3,
-      student: "Carlos Reyes",
-      studentId: "2023-022",
-      item: "School Hoodie",
-      reason: "Ordered by mistake",
-      date: "2026-03-12",
-      status: "Pending",
-    },
-  ];
+    const location = useLocation();
+    const product = location.state?.product;
+    console.log(product);
+  
 
   return (
     <div className="p-6 space-y-6">
@@ -54,30 +30,32 @@ const ViewRefund = () => {
             <tr>
               <th className="text-left p-3">Student</th>
               <th className="text-left p-3">Student ID</th>
-              <th className="text-left p-3">Item</th>
-              <th className="text-left p-3">Reason</th>
+                          <th className="text-left p-3">Course</th>
+                           <th className="text-left p-3">Total Refund</th>
+              <th className="text-left p-3">Admin Manage</th>
               <th className="text-left p-3">Date</th>
               <th className="text-left p-3">Status</th>
             </tr>
           </thead>
 
           <tbody>
-            {refundRequests.map((refund) => (
-              <tr key={refund.id} className="border-t hover:bg-gray-50">
-                <td className="p-3">{refund.student}</td>
-                <td className="p-3">{refund.studentId}</td>
-                <td className="p-3">{refund.item}</td>
-                <td className="p-3">{refund.reason}</td>
-                <td className="p-3">{refund.date}</td>
+            {product.refunds.map((refund) => (
+              <tr key={refund._id} className="border-t hover:bg-gray-50">
+                <td className="p-3">{refund.order_details.student_name}</td>
+                    <td className="p-3">{refund.order_details.id_number}</td>
+                    <td className="p-3">{refund.order_details.course}</td>
+                      <td className="p-3">{refund.refund_price}</td>
+                <td className="p-3">{refund.order_details.admin_name}</td>
+             
+                <td className="p-3">{formattedDate(refund.refund_date)}</td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 text-xs rounded ${
-                      refund.status === "Approved"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
+                    className={`px-2 py-1 text-xs rounded 
+                        bg-green-100 text-green-700`
+                       
+                    }
                   >
-                    {refund.status}
+                    Refunded
                   </span>
                 </td>
               </tr>
