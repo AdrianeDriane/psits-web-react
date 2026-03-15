@@ -46,8 +46,7 @@ const EventsPage: React.FC = () => {
   };
 
   const handleViewStatistics = (eventId: string) => {
-    // TODO: Implement view statistics logic
-    console.warn("View statistics for event:", eventId);
+    navigate(`/admin/events/${eventId}/statistics`);
   };
 
   const handleViewRaffle = (eventId: string) => {
