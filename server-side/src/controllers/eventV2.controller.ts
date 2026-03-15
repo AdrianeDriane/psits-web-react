@@ -8,6 +8,7 @@ import { Admin } from "../models/admin.model";
 import { Event } from "../models/event.model";
 import { Merch } from "../models/merch.model";
 import { Student } from "../models/student.model";
+import { computeEventStatistics } from "../services/eventStatistics.service";
 import {
   markAttendance,
   AttendanceError,
@@ -237,10 +238,6 @@ const matchesCampusFilter = (
   attendeeCampus: string,
   campusFilter: string
 ): boolean => {
-  if (campusFilter === "UC-Main") {
-    return attendeeCampus === "UC-Main" || attendeeCampus === "UC-CS";
-  }
-
   return attendeeCampus === campusFilter;
 };
 
@@ -489,13 +486,9 @@ export const getEventAttendeesV2Controller = async (
 
     const params = normalizeAttendeeQueryParams(req);
     const requesterCampus = claims.campus;
-    const requesterCampusScope =
-      requesterCampus === "UC-CS" ? "UC-Main" : requesterCampus;
     const isUcMainAdmin = requesterCampus === "UC-Main";
 
-    const effectiveCampus = isUcMainAdmin
-      ? params.campus
-      : requesterCampusScope;
+    const effectiveCampus = isUcMainAdmin ? params.campus : requesterCampus;
 
     const event = await Event.findOne(query).select("attendees eventId");
 
@@ -1047,6 +1040,62 @@ export const getMyEventsController = async (req: Request, res: Response) => {
   }
 };
 
+export const getEventStatisticsV2Controller = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { eventId } = req.params;
+
+    if (!eventId || typeof eventId !== "string") {
+      return res.status(400).json({ message: "Event ID is required" });
+    }
+
+    const query = buildEventLookupQuery(eventId);
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const claims = req.userV2;
+    if (!claims || claims.role !== "Admin") {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+
+    const requesterCampus = claims.campus;
+    const isUcMainAdmin = requesterCampus === "UC-Main";
+    const campusScope = isUcMainAdmin ? "all" : requesterCampus;
+
+    const event = await Event.findOne(query).select(
+      "attendees sales_data totalRevenueAll totalUnitsSold eventId"
+    );
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const attendeeList = Array.isArray(event.attendees)
+      ? (event.attendees as unknown as IAttendee[])
+      : [];
+    const salesData = Array.isArray(event.sales_data) ? event.sales_data : [];
+
+    const statistics = computeEventStatistics(
+      attendeeList,
+      salesData,
+      campusScope
+    );
+
+    return res.status(200).json({
+      data: statistics,
+      access: {
+        isUcMainAdmin,
+        campusScope: campusScope === "all" ? "all" : requesterCampus,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching event statistics:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 // ─── Mark Attendance V2 ─────────────────────────────────────────────────────
 
 export const markAttendanceV2Controller = async (

@@ -10,6 +10,7 @@ import {
   getAllEventsV2Controller,
   getEventAttendeesV2Controller,
   getEventByIdV2Controller,
+  getEventStatisticsV2Controller,
   getMyEventsController,
   markAttendanceV2Controller,
 } from "../controllers/eventV2.controller";
@@ -47,6 +48,14 @@ router.get(
   requireAccessTokenV2,
   roleAuthenticateV2(["Admin"]),
   getEventAttendeesV2Controller
+);
+
+// GET statistics for specific event
+router.get(
+  "/:eventId/statistics",
+  requireAccessTokenV2,
+  roleAuthenticateV2(["Admin"]),
+  getEventStatisticsV2Controller
 );
 
 // POST add attendee (creates user account if needed + registers as attendee)

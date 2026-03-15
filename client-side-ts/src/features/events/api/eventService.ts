@@ -10,6 +10,7 @@ import type {
   EventCheckData,
   RaffleResponse,
   StatisticsData,
+  EventStatisticsResponse,
   CreateEventData,
   CreateEventResponse,
   AddAttendeeFormData,
@@ -434,6 +435,24 @@ export const getStatistic = async (
     );
 
     return response.status === 200 ? response.data : [];
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+export const getEventStatisticsV2 = async (
+  eventId: string
+): Promise<EventStatisticsResponse | false> => {
+  try {
+    if (!eventId?.trim()) {
+      return false;
+    }
+
+    const response = await api.get<EventStatisticsResponse>(
+      `/api/v2/events/${eventId}/statistics`
+    );
+
+    return response.data;
   } catch (error) {
     return handleApiError(error);
   }
