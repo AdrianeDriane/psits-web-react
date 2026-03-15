@@ -7,6 +7,7 @@ import { IEvent } from "../models/event.interface";
 import { Event } from "../models/event.model";
 import { Merch } from "../models/merch.model";
 import { Student } from "../models/student.model";
+import { computeEventStatistics } from "../services/eventStatistics.service";
 
 /**
  * Returns a Date object representing the start of the day (00:00:00)
@@ -487,7 +488,9 @@ export const getEventAttendeesV2Controller = async (
       requesterCampus === "UC-CS" ? "UC-Main" : requesterCampus;
     const isUcMainAdmin = requesterCampus === "UC-Main";
 
-    const effectiveCampus = isUcMainAdmin ? params.campus : requesterCampusScope;
+    const effectiveCampus = isUcMainAdmin
+      ? params.campus
+      : requesterCampusScope;
 
     const event = await Event.findOne(query).select("attendees eventId");
 
@@ -1035,6 +1038,65 @@ export const getMyEventsController = async (req: Request, res: Response) => {
     return res.status(200).json({ data: filteredEvents });
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getEventStatisticsV2Controller = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { eventId } = req.params;
+
+    if (!eventId || typeof eventId !== "string") {
+      return res.status(400).json({ message: "Event ID is required" });
+    }
+
+    const query = buildEventLookupQuery(eventId);
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const claims = req.userV2;
+    if (!claims || claims.role !== "Admin") {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+
+    const requesterCampus = claims.campus;
+    const requesterCampusScope =
+      requesterCampus === "UC-CS" ? "UC-Main" : requesterCampus;
+    const isUcMainAdmin = requesterCampusScope === "UC-Main";
+    const campusScope = isUcMainAdmin ? "all" : requesterCampusScope;
+
+    const event = await Event.findOne(query).select(
+      "attendees sales_data totalRevenueAll totalUnitsSold eventId"
+    );
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const attendeeList = Array.isArray(event.attendees)
+      ? (event.attendees as unknown as IAttendee[])
+      : [];
+    const salesData = Array.isArray(event.sales_data) ? event.sales_data : [];
+
+    const statistics = computeEventStatistics(
+      attendeeList,
+      salesData,
+      campusScope
+    );
+
+    return res.status(200).json({
+      data: statistics,
+      access: {
+        isUcMainAdmin,
+        campusScope: campusScope === "all" ? "all" : requesterCampusScope,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching event statistics:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
