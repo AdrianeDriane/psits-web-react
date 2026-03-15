@@ -13,6 +13,7 @@ import {
   cancelOrderController,
   approveOrderController,
   getAllPendingCountController,
+  refund,
 } from "../controllers/order.controller";
 
 const router = Router();
@@ -59,5 +60,11 @@ router.get(
   admin_authenticate,
   getAllPendingCountController
 );
+router.post(
+  "/refund",
+  admin_authenticate,
+  role_authenticate(["admin", "finance"]),
+  refund
+)
 
 export default router;

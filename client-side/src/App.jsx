@@ -22,6 +22,8 @@ import Merchandise from "./pages/admin/Merchandise";
 import Officers from "./pages/admin/Officers";
 import AllOfficers from "./pages/admin/officers/AllOfficers";
 import Request from "./pages/admin/officers/Request";
+import RefundDashboard from "./pages/admin/Refund/RefundDashboard";
+import ViewRefund from "./pages/admin/Refund/ViewRefund";
 
 import Raffle from "./pages/admin/events/EventRaffle";
 import RaffleTwo from './pages/admin/events/EventRaffleTwo'
@@ -77,6 +79,7 @@ import { QRCodeScanner } from "./pages/admin/QRCodeScanner";
 
 //Promo Code
 import PromoDashboard from "./pages/admin/PromoCode/PromoDashboard";
+
 
 const App = () => {
   return (
@@ -209,7 +212,17 @@ const App = () => {
           <Route
             path="orders"
             element={<PrivateRouteAdmin element={Orders} />}
-          ></Route>
+            ></Route>
+            <Route
+            path="refund"
+            element={<PrivateRouteAdmin element={RefundDashboard} />}
+            >
+           
+
+             
+            </Route>
+               <Route path="refund/view/:id"
+            element={<PrivateRouteAdmin element={ViewRefund} />}/> 
           <Route
             path="reports"
             element={<PrivateRouteAdmin element={Reports} />}

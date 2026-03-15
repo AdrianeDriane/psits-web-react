@@ -7,7 +7,7 @@ export const checkPromos = async () => {
     const current = new Date();
 
     const invalidPromos = await Promo.find({
-      $or: [{ start_date: { $gt: current } }, { end_date: { $lt: current } }],
+      $or: [{ start_date: { $gt: current } }, { end_date: { $lt: current } } , {status : "Deleted"} ],
     });
 
     if (!invalidPromos.length) {

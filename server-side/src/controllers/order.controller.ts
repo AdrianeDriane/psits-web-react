@@ -16,6 +16,8 @@ import dotenv from "dotenv";
 import { format } from "date-fns";
 import { orderReceipt } from "../mail_template/mail.template";
 import { Request, Response } from "express";
+import { Refund } from "../models/refund.model";
+import { refundCodeGenerator } from "../custom_function/code_generator";
 
 export const getSpecificOrdersController = async (
   req: Request,
@@ -40,7 +42,7 @@ export const getSpecificOrdersController = async (
 
 export const getAllOrdersController = async (req: Request, res: Response) => {
   try {
-    const orders: IOrders[] = await Orders.find().sort({ order_date: -1 });
+    const orders: IOrders[] = await Orders.find({order_status:  { $ne: "Refunded" }}).sort({ order_date: -1 });
     if (orders.length > 0) {
       res.status(200).json(orders);
     } else {
@@ -723,5 +725,85 @@ export const getAllPendingCountController = async (
   } catch (error) {
     console.error("Error fetching pending orders:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
+export const refund = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  const { order_id } = req.body;
+  console.log(order_id);
+
+  if (!order_id) {
+    return res.status(400).json({ message: "Order ID is required" });
+  }
+
+  const orderId = new Types.ObjectId(order_id);
+
+  try {
+
+    const order = await Orders.findById(orderId).session(session);
+
+    if (!order || order.order_status !== "Paid") {
+      throw new Error("Order must exist and be paid before refund.");
+    }
+
+  
+    await Orders.updateOne(
+      { _id: orderId },
+      { $set: { order_status: "Refunded" } },
+      { session }
+    );
+
+    
+    for (const item of order.items) {
+
+      const merchId = new Types.ObjectId(item.product_id);
+      const merch  = await Merch.findOne({ _id: merchId });
+      const result = await Merch.findOneAndUpdate(
+        { _id: merchId },
+        { $pull: { order_details: { reference_code: order.reference_code } } },
+        { new: true, session }
+      );
+      
+   
+      if (!result) {
+        throw new Error(`Failed to update merchandise ${merchId}`);
+      }
+        await new Refund({
+      refund_id: refundCodeGenerator(),
+      order_id: orderId,
+      order_reference: order.reference_code,
+          product_id: merchId,
+          product_name: merch?.name,
+          refund_price: item.sub_total,
+          refund_admin: req.admin.name,
+            refund_admin_id:req.admin.id_number,
+          refund_date: new Date(),
+
+    }).save();
+    }
+  
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(200).json({
+      message: "Refund processed successfully"
+    });
+
+  } catch (error) {
+
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error("Error refund orders:", error);
+
+    return res.status(500).json({
+      error: "Refund process failed"
+    });
   }
 };
