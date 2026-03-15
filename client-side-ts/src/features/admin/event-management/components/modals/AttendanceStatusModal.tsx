@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { CheckCircle2 } from "lucide-react";
 
 interface AttendanceSession {
   attended?: boolean;
@@ -24,6 +25,7 @@ interface AttendanceStatusModalProps {
   attendeeName: string;
   attendance?: AttendanceRecord;
   isAttendanceAvailable: boolean;
+  confirmedBy?: string;
 }
 
 const SESSION_LABELS: Array<{
@@ -57,6 +59,7 @@ export const AttendanceStatusModal: React.FC<AttendanceStatusModalProps> = ({
   attendeeName,
   attendance,
   isAttendanceAvailable,
+  confirmedBy,
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -71,35 +74,53 @@ export const AttendanceStatusModal: React.FC<AttendanceStatusModalProps> = ({
             Attendance tracking will be available during the event.
           </div>
         ) : (
-          <div className="space-y-3">
-            {SESSION_LABELS.map((session) => {
-              const record = attendance?.[session.key];
-              const attended = Boolean(record?.attended);
-
-              return (
-                <div
-                  key={session.key}
-                  className="bg-muted/50 flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div>
-                    <p className="font-medium">{session.label}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {formatTimestamp(record?.timestamp)}
-                    </p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={
-                      attended
-                        ? "border-green-200 bg-green-100 text-green-800"
-                        : "border-slate-200 bg-slate-100 text-slate-700"
-                    }
-                  >
-                    {attended ? "Attended" : "Not Attended"}
-                  </Badge>
+          <div className="space-y-4">
+            {/* Confirmed By Section */}
+            {confirmedBy && (
+              <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-600" />
+                <div>
+                  <p className="text-xs font-semibold text-green-900">
+                    Attendance marked by
+                  </p>
+                  <p className="text-sm font-medium text-green-800">
+                    {confirmedBy}
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+            )}
+
+            {/* Sessions List */}
+            <div className="space-y-3">
+              {SESSION_LABELS.map((session) => {
+                const record = attendance?.[session.key];
+                const attended = Boolean(record?.attended);
+
+                return (
+                  <div
+                    key={session.key}
+                    className="bg-muted/50 flex items-center justify-between rounded-lg border p-4"
+                  >
+                    <div>
+                      <p className="font-medium">{session.label}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatTimestamp(record?.timestamp)}
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        attended
+                          ? "border-green-200 bg-green-100 text-green-800"
+                          : "border-slate-200 bg-slate-100 text-slate-700"
+                      }
+                    >
+                      {attended ? "Attended" : "Not Attended"}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </DialogContent>

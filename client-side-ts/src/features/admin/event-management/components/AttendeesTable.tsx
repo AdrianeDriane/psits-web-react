@@ -27,13 +27,17 @@ import {
   MarkAttendanceButton,
   StudentDetailsModal,
   AttendanceStatusModal,
+  MarkAttendanceModal,
+  ScanQRModal,
 } from "./modals";
 import type { FilterOptions, AttendeeFormData } from "./modals";
 import type {
   AttendeesPagination,
   GetAttendeesParams,
   EventMerchMeta,
+  QRCodePayloadV2,
 } from "@/features/events/types/event.types";
+import { markAttendanceV2 } from "@/features/events/api/eventService";
 import { CampusView } from "@/components/common/CampusView";
 
 interface Attendee {
@@ -61,6 +65,7 @@ interface Attendee {
   campus?: string;
   shirtSize?: string;
   shirtPrice?: string;
+  confirmedBy?: string;
 }
 
 interface AttendeesTableProps {
@@ -70,6 +75,7 @@ interface AttendeesTableProps {
   adminCampus?: string;
   merch?: EventMerchMeta | null;
   eventStatus?: "ongoing" | "ended" | "upcoming";
+  attendanceType?: "open" | "ticketed";
 }
 
 export const AttendeesTable: React.FC<AttendeesTableProps> = ({
@@ -79,6 +85,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   adminCampus,
   merch,
   eventStatus,
+  attendanceType: _attendanceType,
 }) => {
   const toLocalYyyyMmDd = (date: Date): string => {
     const year = date.getFullYear();
@@ -98,6 +105,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const [isAttendanceStatusOpen, setIsAttendanceStatusOpen] = useState(false);
   const [selectedAttendanceAttendee, setSelectedAttendanceAttendee] =
     useState<Attendee | null>(null);
+  const [isScanQROpen, setIsScanQROpen] = useState(false);
+  const [isMarkAttendanceOpen, setIsMarkAttendanceOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<AttendeesPagination>({
@@ -189,6 +198,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
           campus: attendee.campus,
           shirtSize: attendee.shirtSize,
           shirtPrice: attendee.shirtPrice?.toString(),
+          confirmedBy: attendee.confirmedBy,
         }));
         setAttendees(mappedAttendees);
 
@@ -225,8 +235,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const totalAttendees = pagination.total;
   const startIndex = (pagination.page - 1) * pagination.limit;
   const endIndex = startIndex + paginatedAttendees.length;
-
-
 
   const handleFilter = () => {
     setIsFilterOpen(true);
@@ -388,8 +396,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
           <div className="flex-1 sm:flex-none">
             <MarkAttendanceButton
               className="w-full"
-              onScanQR={() => undefined}
-              onEnterStudentId={() => undefined}
+              onScanQR={() => setIsScanQROpen(true)}
+              onEnterStudentId={() => setIsMarkAttendanceOpen(true)}
+              isSessionActive={eventStatus === "ongoing"}
             />
           </div>
         </div>
@@ -639,6 +648,28 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         attendeeName={selectedAttendanceAttendee?.name ?? ""}
         attendance={selectedAttendanceAttendee?.attendance}
         isAttendanceAvailable={isAttendanceAvailable}
+        confirmedBy={selectedAttendanceAttendee?.confirmedBy}
+      />
+      <ScanQRModal
+        open={isScanQROpen}
+        onOpenChange={setIsScanQROpen}
+        onScanSuccess={async (payload: QRCodePayloadV2) => {
+          const result = await markAttendanceV2(eventId, payload.studentId, {
+            campus: payload.campus,
+            attendeeName: payload.name,
+            course: payload.course ?? "Unknown",
+            year: payload.year ?? 1,
+          });
+          if (result) {
+            setRefreshTick((t) => t + 1);
+          }
+        }}
+      />
+      <MarkAttendanceModal
+        open={isMarkAttendanceOpen}
+        onOpenChange={setIsMarkAttendanceOpen}
+        eventId={eventId}
+        onAttendanceMarked={() => setRefreshTick((t) => t + 1)}
       />
     </div>
   );
