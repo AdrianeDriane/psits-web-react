@@ -233,3 +233,35 @@ export interface RemoveRaffleResponse {
   message: string;
   [key: string]: unknown;
 }
+
+// ─── Attendance V2 Types ─────────────────────────────────────────────────────
+
+export interface MarkAttendanceV2Payload {
+  campus: string;
+  attendeeName: string;
+  course: string;
+  year: number;
+}
+
+export interface MarkAttendanceV2Response {
+  message: string;
+  session: string;
+  data: {
+    id_number: string;
+    name: string;
+    campus: string;
+    attendance: Attendee["attendance"];
+  };
+  isNewAttendee: boolean;
+}
+
+/** Parsed QR code payload (JSON format v2) */
+export interface QRCodePayloadV2 {
+  v: number;
+  eventId: string;
+  studentId: string;
+  name: string;
+  campus: string;
+  course: string;
+  year: number;
+}
