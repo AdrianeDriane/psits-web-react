@@ -56,7 +56,7 @@ const RefundDashboard = () => {
 
       {/* Merchandise Grid */}
       <div className="grid grid-cols-5 gap-4">
-        {refundData && refundData.map((item) => (
+        {refundData ? refundData.map((item) => (
           <div
             key={item.product_id}
             className="bg-white shadow rounded-xl p-4 flex flex-col items-center text-center"
@@ -86,7 +86,7 @@ const RefundDashboard = () => {
   </button>
 </Link>
           </div>
-        ))}
+        )): (<div> No data</div>)}
       </div>
     </div>
   );
