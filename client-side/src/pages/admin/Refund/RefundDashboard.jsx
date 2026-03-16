@@ -11,8 +11,12 @@ const RefundDashboard = () => {
         try {
             const result = await getAllRefunds();
            
-
+            if(result){
             setRefundData(result.data);
+            }
+            else{
+                setRefundData([]);
+            }
         } catch (error) {
            
         }
