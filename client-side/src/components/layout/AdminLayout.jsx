@@ -59,7 +59,8 @@ const AdminLayout = () => {
           { text: "Students", icon: "fas fa-users", path: "students" },
           { text: "Events", icon: "fas fa-calendar-alt", path: "events" },
           { text: "Merchandise", icon: "fas fa-boxes", path: "merchandise" },
-          { text: "Orders", icon: "fas fa-shopping-cart", path: "orders" },
+        { text: "Orders", icon: "fas fa-shopping-cart", path: "orders" },
+           { text: "Refund", icon: "fas fa-money-bill-wave", path: "refund" },
           { text: "Reports", icon: "fas fa-chart-line", path: "reports" },
           { text: "Documentation", icon: "fas fa-book-open", path: "documentation" },
           logsAccess() && {

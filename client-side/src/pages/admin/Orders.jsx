@@ -4,7 +4,9 @@ import {
   getAllPendingOrders,
   getAllPaidOrders,
   makeOrder,
+
 } from "../../api/orders";
+import { refund } from "../../api/refund.api";
 import ButtonsComponent from "../../components/Custom/ButtonsComponent";
 import ApproveModal from "../../components/admin/ApproveModal";
 import Receipt from "../../components/common/Receipt";
@@ -38,17 +40,35 @@ const Orders = () => {
   const [shouldPrint, setShouldPrint] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [delModal, setDelModal] = useState(false);
+  const [refModal, setRefModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [error, setError] = useState(null);
   const componentRef = useRef();
   const printRef = useRef();
   const [isLoading, setIsLoading] = useState(false);
+  const [refundId, setRefundId] = useState("");
   const [isAddOrderModalShown, showAddOrderModal] = useState(false);
 
   const fetchOrders = async () => {
     selectedTab === "Pending" ? fetchPendingOrders() : fetchPaidOrders();
   };
+
+  const refundAction = async () => {
+    try {
+      const result = await refund(refundId);
+      fetchPaidOrders();
+setRefModal(false);
+    } catch (error) {
+      console.error("Error in refunding order");
+    }
+  }
+  const handleRefundModal = (order_id) => {
+    setRefundId(order_id);
+    setRefModal(true);
+  }
+
+
 
   const fetchPendingOrders = async () => {
     setIsLoading(true);
@@ -496,6 +516,37 @@ const Orders = () => {
                                 whileTap={{ scale: 0.98, opacity: 0.9 }}
                                 disabled={!financeAndAdminConditionalAccess()}
                               />
+                              <FormButton
+                                type="button"
+                                text={
+                                  !financeAndAdminConditionalAccess()
+                                    ? "Not Authorized"
+                                    : "Refund"
+                                }
+                                onClick={() => {
+                                  if (financeAndAdminConditionalAccess()) {
+                                    handleRefundModal(order._id);
+                                  }
+                                }}
+                                icon={
+                                  <i
+                                    className={
+                                      !financeAndAdminConditionalAccess()
+                                        ? "fa fa-lock"
+                                        : "fas fa-undo"
+                                    }
+                                  ></i>
+                                }
+                                styles={`relative flex items-center space-x-2 px-4 py-2 rounded  text-white ${
+                                  !financeAndAdminConditionalAccess()
+                                    ? "bg-gray-500 cursor-not-allowed"
+                                    : "bg-[#002E48]"
+                                }`}
+                                textClass="text-white"
+                                whileHover={{ scale: 1.02, opacity: 0.95 }}
+                                whileTap={{ scale: 0.98, opacity: 0.9 }}
+                                disabled={!financeAndAdminConditionalAccess()}
+                              />
                             </ButtonsComponent>
                           </td>
                         )}
@@ -605,6 +656,13 @@ const Orders = () => {
           confirmType={ConfirmActionType.ORDER}
           onCancel={handleDeleteModal}
           onConfirm={handleConfirmDeletion}
+        />
+      )}
+      {refModal && (
+         <ConfirmationModal
+          confirmType={ConfirmActionType.REFUND}
+          onCancel={()=> setRefModal(false)}
+          onConfirm={()=>refundAction()}
         />
       )}
 
