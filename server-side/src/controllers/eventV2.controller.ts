@@ -602,46 +602,6 @@ const parseYearLevel = (yearLevel: string): number | null => {
   return num;
 };
 
-/**
- * Resolves the shirt price from the Merch document for a given size.
- * Returns 0 when shirt size is not applicable.
- */
-const resolveShirtPrice = async (
-  eventMerchId: mongoose.Types.ObjectId,
-  shirtSize: string | undefined
-): Promise<{ price: number; error?: string }> => {
-  const trimmed = shirtSize?.trim();
-  if (!trimmed) return { price: 0 };
-
-  const merch = await Merch.findById(eventMerchId)
-    .select("selectedSizes")
-    .lean();
-
-  if (!merch || !merch.selectedSizes) {
-    return { price: 0, error: "Merch data not found for this event" };
-  }
-
-  const sizes = merch.selectedSizes;
-  let sizeConfig: { price?: string } | undefined;
-
-  if (sizes instanceof Map) {
-    sizeConfig = sizes.get(trimmed) as { price?: string } | undefined;
-  } else {
-    sizeConfig = (sizes as Record<string, { price?: string }>)[trimmed];
-  }
-
-  if (!sizeConfig) {
-    return { price: 0, error: `Shirt size "${trimmed}" is not available` };
-  }
-
-  const price = Number(sizeConfig.price);
-  if (!Number.isFinite(price) || price < 0) {
-    return { price: 0, error: `Invalid price for size "${trimmed}"` };
-  }
-
-  return { price };
-};
-
 interface AddAttendeeV2Body {
   studentId?: string;
   firstName?: string;
@@ -651,6 +611,7 @@ interface AddAttendeeV2Body {
   course?: string;
   yearLevel?: string;
   shirtSize?: string;
+  shirtPrice?: number;
   password?: string;
 }
 
@@ -702,6 +663,7 @@ export const addAttendeeV2Controller = async (req: Request, res: Response) => {
       course,
       yearLevel,
       shirtSize,
+      shirtPrice,
       password,
     } = req.body as AddAttendeeV2Body;
 
@@ -832,15 +794,18 @@ export const addAttendeeV2Controller = async (req: Request, res: Response) => {
       });
     }
 
-    // ── Resolve shirt price server-side ─────────────────────────────────
-    const { price: shirtPrice, error: priceErr } = await resolveShirtPrice(
-      event.eventId,
-      shirtSize
-    );
-    if (priceErr) {
+    // ── Validate user-provided price ──────────────────────────────────
+    if (shirtPrice == null) {
       return res
         .status(400)
-        .json({ error: "PRICE_RESOLUTION", message: priceErr });
+        .json({ error: "VALIDATION", message: "Price is required" });
+    }
+    const resolvedPrice = Number(shirtPrice);
+    if (!Number.isFinite(resolvedPrice) || resolvedPrice < 0) {
+      return res.status(400).json({
+        error: "VALIDATION",
+        message: "Price must be a non-negative number",
+      });
     }
 
     // ── Check existing student ──────────────────────────────────────────
@@ -911,7 +876,7 @@ export const addAttendeeV2Controller = async (req: Request, res: Response) => {
       year: yearNumber,
       campus: adminCampus,
       shirtSize: shirtSize?.trim() ?? "",
-      shirtPrice,
+      shirtPrice: resolvedPrice,
       transactBy: claims.idNumber,
       transactDate: new Date(),
       attendance: {
@@ -925,14 +890,14 @@ export const addAttendeeV2Controller = async (req: Request, res: Response) => {
     } as IAttendee);
 
     // Step 3: Update sales data (campus-specific)
-    if (shirtPrice > 0) {
+    if (resolvedPrice > 0) {
       const campusData = event.sales_data.find((s) => s.campus === adminCampus);
       if (campusData) {
         campusData.unitsSold += 1;
-        campusData.totalRevenue += shirtPrice;
+        campusData.totalRevenue += resolvedPrice;
       }
       event.totalUnitsSold = (event.totalUnitsSold ?? 0) + 1;
-      event.totalRevenueAll = (event.totalRevenueAll ?? 0) + shirtPrice;
+      event.totalRevenueAll = (event.totalRevenueAll ?? 0) + resolvedPrice;
     }
 
     await event.save({ session });
@@ -973,7 +938,7 @@ export const addAttendeeV2Controller = async (req: Request, res: Response) => {
           course: course!.trim(),
           year: yearNumber,
           shirtSize: shirtSize?.trim() ?? "",
-          shirtPrice,
+          shirtPrice: resolvedPrice,
         },
       },
     });

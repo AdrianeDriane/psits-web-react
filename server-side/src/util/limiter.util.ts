@@ -4,10 +4,11 @@ import { rateLimit } from "express-rate-limit";
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDevelopment ? 500 : 100, // 500 attempts in dev, 100 in production
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: isDevelopment ? 1000 : 500, // 1000 attempts in dev, 500 in production
+  skipSuccessfulRequests: true,
   message:
-    "Too many login attempts from this IP, please try again after 15 minutes.",
+    "Too many login attempts from this IP, please try again after 5 minutes.",
   standardHeaders: true,
   legacyHeaders: false,
 });
