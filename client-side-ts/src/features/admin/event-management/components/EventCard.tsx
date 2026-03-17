@@ -101,7 +101,7 @@ export const EventCard: React.FC<EventCardProps> = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                className="cursor-not-allowed"
+                className="cursor-pointer"
                 onClick={() => onViewStatistics?.(eventId)}
               >
                 <BarChart3 />

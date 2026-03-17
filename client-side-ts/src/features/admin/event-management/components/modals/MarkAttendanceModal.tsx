@@ -1,71 +1,107 @@
-import React, { useState } from 'react';
-import { X, Search } from 'lucide-react';
+import React, { useState } from "react";
+import { X, Search, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  markAttendanceV2,
+  getAttendees,
+} from "@/features/events/api/eventService";
+
+interface StudentDetails {
+  id_number: string;
+  name: string;
+  campus: string;
+  course: string;
+  year: number;
+}
 
 interface MarkAttendanceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onMarkPresent: (studentId: string) => void;
-  onSearchStudent: (studentId: string) => {
-    id: string;
-    name: string;
-    email: string;
-    studentId: string;
-    courseYear: string;
-  } | null;
+  eventId: string;
+  onAttendanceMarked: () => void;
 }
 
 export const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
   open,
   onOpenChange,
-  onMarkPresent,
-  onSearchStudent,
+  eventId,
+  onAttendanceMarked,
 }) => {
-  const [studentId, setStudentId] = useState('');
-  const [studentDetails, setStudentDetails] = useState<{
-    id: string;
-    name: string;
-    email: string;
-    studentId: string;
-    courseYear: string;
-  } | null>(null);
-  const [error, setError] = useState('');
+  const [studentId, setStudentId] = useState("");
+  const [studentDetails, setStudentDetails] = useState<StudentDetails | null>(
+    null
+  );
+  const [error, setError] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [isMarking, setIsMarking] = useState(false);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!studentId.trim()) {
-      setError('Please enter a student ID');
+      setError("Please enter a student ID");
       return;
     }
 
-    const student = onSearchStudent(studentId);
-    if (student) {
-      setStudentDetails(student);
-      setError('');
-    } else {
-      setStudentDetails(null);
-      setError('Student not found');
+    setIsSearching(true);
+    setError("");
+    setStudentDetails(null);
+
+    try {
+      const result = await getAttendees(eventId, {
+        search: studentId.trim(),
+        limit: 1,
+      });
+
+      if (result && result.data && result.data.length > 0) {
+        const attendee = result.data[0];
+        setStudentDetails({
+          id_number: attendee.id_number,
+          name: attendee.name,
+          campus: attendee.campus,
+          course: attendee.course,
+          year: attendee.year,
+        });
+      } else {
+        setError("Student not found in this event's attendee list");
+      }
+    } catch {
+      setError("Failed to search for student");
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  const handleMarkPresent = () => {
-    if (studentDetails) {
-      onMarkPresent(studentDetails.id);
+  const handleMarkPresent = async () => {
+    if (!studentDetails) return;
+
+    setIsMarking(true);
+
+    const result = await markAttendanceV2(eventId, studentDetails.id_number, {
+      campus: studentDetails.campus,
+      attendeeName: studentDetails.name,
+      course: studentDetails.course,
+      year: studentDetails.year,
+    });
+
+    setIsMarking(false);
+
+    if (result) {
       handleReset();
       onOpenChange(false);
+      onAttendanceMarked();
     }
   };
 
   const handleReset = () => {
-    setStudentId('');
+    setStudentId("");
     setStudentDetails(null);
-    setError('');
+    setError("");
   };
 
   const handleClose = () => {
@@ -75,45 +111,56 @@ export const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-full max-w-md sm:max-w-xs p-0 gap-0 rounded-lg sm:rounded-xl" showCloseButton={false}>
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent
+        className="w-full max-w-md gap-0 rounded-lg p-0 sm:max-w-xs sm:rounded-xl"
+        showCloseButton={false}
+      >
+        <DialogHeader className="border-b px-6 py-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold leading-6">Mark Attendance</DialogTitle>
+            <DialogTitle className="text-xl leading-6 font-semibold">
+              Mark Attendance
+            </DialogTitle>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={handleClose}
-              className="h-8 w-8 flex items-center justify-center rounded-full cursor-pointer"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="px-6 py-6 space-y-6">
+        <div className="space-y-6 px-6 py-6">
           {/* Search Input */}
           <div className="space-y-2">
             <div className="relative">
               <Input
-                placeholder="Search student ID"
+                placeholder="Enter student ID"
                 value={studentId}
                 onChange={(e) => {
                   setStudentId(e.target.value);
-                  setError('');
+                  setError("");
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     handleSearch();
                   }
                 }}
                 className="pr-12"
+                disabled={isSearching}
               />
               <Button
                 size="icon-sm"
                 onClick={handleSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#1C9DDE] hover:bg-[#1C9DDE] rounded-full h-8 w-8"
+                disabled={isSearching}
+                className="absolute top-1/2 right-2 h-8 w-8 -translate-y-1/2 rounded-full bg-[#1C9DDE] hover:bg-[#1789c4]"
               >
-                <Search className="h-4 w-4" />
+                {isSearching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
               </Button>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -125,40 +172,56 @@ export const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
               <h3 className="text-sm font-semibold">Student Details</h3>
 
               <div className="space-y-3">
-                {/* Student ID */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Student ID</span>
-                  <span className="text-sm font-medium">{studentDetails.studentId}</span>
+                  <span className="text-muted-foreground text-sm">
+                    Student ID
+                  </span>
+                  <span className="text-sm font-medium">
+                    {studentDetails.id_number}
+                  </span>
                 </div>
 
-                {/* Name */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Name</span>
-                  <span className="text-sm font-medium">{studentDetails.name}</span>
+                  <span className="text-muted-foreground text-sm">Name</span>
+                  <span className="text-sm font-medium">
+                    {studentDetails.name}
+                  </span>
                 </div>
 
-                {/* Course & Year */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Course & Year</span>
-                  <span className="text-sm font-medium">{studentDetails.courseYear}</span>
+                  <span className="text-muted-foreground text-sm">
+                    Course & Year
+                  </span>
+                  <span className="text-sm font-medium">
+                    {studentDetails.course} - Year {studentDetails.year}
+                  </span>
                 </div>
 
-                {/* Email */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Email</span>
-                  <span className="text-sm font-medium">{studentDetails.email}</span>
+                  <span className="text-muted-foreground text-sm">Campus</span>
+                  <span className="text-sm font-medium">
+                    {studentDetails.campus}
+                  </span>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={handleReset}>
+                <Button
+                  variant="outline"
+                  onClick={handleReset}
+                  disabled={isMarking}
+                >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleMarkPresent}
+                  disabled={isMarking}
                   className="bg-green-500 hover:bg-green-600"
                 >
+                  {isMarking ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
                   Mark Present
                 </Button>
               </div>

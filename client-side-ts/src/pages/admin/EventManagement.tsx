@@ -54,6 +54,7 @@ interface EventDetails {
   campusCodes: Campus[];
   venues: string[];
   merch: EventMerchMeta | null;
+  attendanceType: "open" | "ticketed";
 }
 
 const CAMPUS_CODE_TO_NAME: Record<Campus, string> = {
@@ -64,12 +65,7 @@ const CAMPUS_CODE_TO_NAME: Record<Campus, string> = {
   "UC-CS": "University of Cebu Main Campus",
 };
 
-const DEFAULT_CAMPUSES: Campus[] = [
-  "UC-Main",
-  "UC-Banilad",
-  "UC-LM",
-  "UC-PT",
-];
+const DEFAULT_CAMPUSES: Campus[] = ["UC-Main", "UC-Banilad", "UC-LM", "UC-PT"];
 
 const normalizeCampusForFilter = (campus: Campus): Campus =>
   campus === "UC-CS" ? "UC-Main" : campus;
@@ -238,6 +234,10 @@ const mapApiEventToEventDetails = (
     campusCodes: normalizedCampusCodes,
     venues: normalizedCampusCodes.map((code) => CAMPUS_CODE_TO_NAME[code]),
     merch: normalizeMerchMeta(event.merch),
+    attendanceType:
+      event.attendanceType === "open" || event.attendanceType === "ticketed"
+        ? event.attendanceType
+        : "ticketed",
   };
 };
 
@@ -696,6 +696,7 @@ const EventManagement: React.FC = () => {
                         adminCampus={user?.campus}
                         merch={eventDetails.merch}
                         eventStatus={eventDetails.status}
+                        attendanceType={eventDetails.attendanceType}
                       />
                     </TabsContent>
                   )}
@@ -712,6 +713,7 @@ const EventManagement: React.FC = () => {
                         adminCampus={user?.campus}
                         merch={eventDetails.merch}
                         eventStatus={eventDetails.status}
+                        attendanceType={eventDetails.attendanceType}
                       />
                     </TabsContent>
                   ))}

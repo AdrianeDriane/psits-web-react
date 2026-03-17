@@ -9,6 +9,7 @@ import { MainLayout } from "./layouts/MainLayout";
 import StudentLayout from "./layouts/StudentLayout";
 import EventManagement from "./pages/admin/EventManagement";
 import EventsPage from "./pages/admin/EventsPage";
+import EventStatisticsPage from "./pages/admin/EventStatisticsPage";
 import GeneralAdminPage from "./pages/admin/GeneralAdminPage";
 import { MainCampusFinancePage } from "./pages/admin/MainCampusFinancePage";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -97,6 +98,10 @@ const router = createBrowserRouter([
               // { path: "dashboard", Component: Dashboard },
               { path: "events", Component: EventsPage },
               { path: "events/:eventId", Component: EventManagement },
+              {
+                path: "events/:eventId/statistics",
+                Component: EventStatisticsPage,
+              },
               // TODO: Remove this sample
               // Example of a general admin page with campus-specific component
               { path: "general", Component: GeneralAdminPage },

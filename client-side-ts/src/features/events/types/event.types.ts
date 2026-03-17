@@ -152,6 +152,72 @@ export interface RaffleResponse {
   message: string;
 }
 
+// ── Statistics V2 Types ──────────────────────────────────────────────────
+
+export interface YearLevelCounts {
+  "1st": number;
+  "2nd": number;
+  "3rd": number;
+  "4th": number;
+}
+
+export interface StatisticsSummary {
+  totalRegistrations: number;
+  totalRevenue: number;
+  totalAttended: number;
+  attendanceRate: number;
+}
+
+export interface DistributionData {
+  registered: Record<string, number>;
+  attended: Record<string, number>;
+}
+
+export interface YearLevelDistributionData {
+  registered: YearLevelCounts;
+  attended: YearLevelCounts;
+}
+
+export interface SessionAttendanceData {
+  morning: number;
+  afternoon: number;
+  evening: number;
+}
+
+export interface CampusBreakdownEntry {
+  campus: string;
+  registrations: number;
+  attended: number;
+  revenue: number;
+  unitsSold: number;
+  yearLevelDistribution: YearLevelCounts;
+}
+
+export interface RegistrationTimelineEntry {
+  date: string;
+  count: number;
+  cumulativeCount: number;
+}
+
+export interface EventStatisticsData {
+  summary: StatisticsSummary;
+  yearLevelDistribution: YearLevelDistributionData;
+  courseDistribution: DistributionData;
+  campusDistribution: DistributionData;
+  sessionAttendance: SessionAttendanceData;
+  campusBreakdown: CampusBreakdownEntry[];
+  registrationTimeline: RegistrationTimelineEntry[];
+}
+
+export interface EventStatisticsResponse {
+  data: EventStatisticsData;
+  access: {
+    isUcMainAdmin: boolean;
+    campusScope: string;
+  };
+}
+
+/** @deprecated Use EventStatisticsData instead */
 export interface StatisticsData {
   totalAttendees: number;
   presentCount: number;
@@ -232,4 +298,36 @@ export interface RaffleWinnerResponse {
 export interface RemoveRaffleResponse {
   message: string;
   [key: string]: unknown;
+}
+
+// ─── Attendance V2 Types ─────────────────────────────────────────────────────
+
+export interface MarkAttendanceV2Payload {
+  campus: string;
+  attendeeName: string;
+  course: string;
+  year: number;
+}
+
+export interface MarkAttendanceV2Response {
+  message: string;
+  session: string;
+  data: {
+    id_number: string;
+    name: string;
+    campus: string;
+    attendance: Attendee["attendance"];
+  };
+  isNewAttendee: boolean;
+}
+
+/** Parsed QR code payload (JSON format v2) */
+export interface QRCodePayloadV2 {
+  v: number;
+  eventId: string;
+  studentId: string;
+  name: string;
+  campus: string;
+  course: string;
+  year: number;
 }

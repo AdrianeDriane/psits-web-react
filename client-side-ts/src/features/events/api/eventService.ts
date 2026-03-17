@@ -10,6 +10,7 @@ import type {
   EventCheckData,
   RaffleResponse,
   StatisticsData,
+  EventStatisticsResponse,
   CreateEventData,
   CreateEventResponse,
   AddAttendeeFormData,
@@ -19,6 +20,8 @@ import type {
   UpdateSettingsFormData,
   RaffleWinnerResponse,
   RemoveRaffleResponse,
+  MarkAttendanceV2Payload,
+  MarkAttendanceV2Response,
 } from "../types/event.types";
 
 const getAuthToken = (): string | null => {
@@ -437,6 +440,24 @@ export const getStatistic = async (
   }
 };
 
+export const getEventStatisticsV2 = async (
+  eventId: string
+): Promise<EventStatisticsResponse | false> => {
+  try {
+    if (!eventId?.trim()) {
+      return false;
+    }
+
+    const response = await api.get<EventStatisticsResponse>(
+      `/api/v2/events/${eventId}/statistics`
+    );
+
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
 export const removeAttendee = async (
   formData: RemoveAttendeeFormData
 ): Promise<boolean | AxiosError> => {
@@ -486,5 +507,39 @@ export const removeEvent = async (
     return response.status === 200;
   } catch (error) {
     return error as AxiosError;
+  }
+};
+
+// ─── Attendance V2 ───────────────────────────────────────────────────────────
+
+export const markAttendanceV2 = async (
+  eventId: string,
+  idNumber: string,
+  payload: MarkAttendanceV2Payload
+): Promise<MarkAttendanceV2Response | false> => {
+  try {
+    if (!eventId?.trim() || !idNumber?.trim()) {
+      showToast("error", "Event ID and Student ID are required");
+      return false;
+    }
+
+    const response = await api.put<MarkAttendanceV2Response>(
+      `/api/v2/events/${eventId}/attendance/${idNumber}`,
+      payload
+    );
+
+    showToast("success", response.data.message);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
+      const message =
+        axiosError.response?.data?.message || "Failed to mark attendance";
+      showToast("error", message);
+    } else {
+      console.error("Error marking attendance V2:", error);
+      showToast("error", "An unexpected error occurred");
+    }
+    return false;
   }
 };
