@@ -121,6 +121,7 @@ export interface GetAttendeesParams {
   course?: string[];
   yearLevel?: number[];
   registeredOn?: string;
+  exportAll?: boolean;
 }
 
 export interface AttendeesPagination {

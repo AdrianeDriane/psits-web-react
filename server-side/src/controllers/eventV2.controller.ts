@@ -46,6 +46,7 @@ interface AttendeeQueryParams {
   course?: string[];
   yearLevel?: number[];
   registeredOn?: string;
+  exportAll?: boolean;
 }
 
 const DEFAULT_PAGE = 1;
@@ -155,6 +156,7 @@ const normalizeAttendeeQueryParams = (req: Request): AttendeeQueryParams => {
     registeredOn: parseRegisteredOn(
       req.query.registeredOn ?? req.query.confirmedOn
     ),
+    exportAll: req.query.exportAll === "true",
   };
 };
 
