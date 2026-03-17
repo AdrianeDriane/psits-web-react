@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ interface FilterSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onApplyFilter: (filters: FilterOptions) => void;
+  activeFilters: FilterOptions;
 }
 
 export interface FilterOptions {
@@ -57,6 +58,7 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
   open,
   onOpenChange,
   onApplyFilter,
+  activeFilters,
 }) => {
   const [filters, setFilters] = useState<FilterOptions>({
     attendanceStatus: [],
@@ -64,6 +66,27 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
     yearLevel: [],
     registeredOn: undefined,
   });
+
+  useEffect(() => {
+    if (open) {
+      // Sync parent's active filters into local state when dialog opens.
+      // This is safe and intentional—we only update when the dialog opens,
+      // which happens infrequently and doesn't cause cascading renders.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFilters({
+        attendanceStatus: [...activeFilters.attendanceStatus],
+        course: [...activeFilters.course],
+        yearLevel: [...activeFilters.yearLevel],
+        registeredOn: activeFilters.registeredOn,
+      });
+    }
+  }, [
+    open,
+    activeFilters.attendanceStatus,
+    activeFilters.course,
+    activeFilters.yearLevel,
+    activeFilters.registeredOn,
+  ]);
 
   const toggleStringFilter = (
     category: "attendanceStatus" | "course",

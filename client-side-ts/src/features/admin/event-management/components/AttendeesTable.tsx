@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Search, Download, Plus, Filter } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Search, Download, Plus, Filter, Loader2, X } from "lucide-react";
+import { format } from "date-fns";
 import { getAttendees } from "@/features/events/api/eventService";
 import { showToast } from "@/utils/alertHelper";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const [isScanQROpen, setIsScanQROpen] = useState(false);
   const [isMarkAttendanceOpen, setIsMarkAttendanceOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<AttendeesPagination>({
     page: 1,
@@ -137,6 +139,27 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     };
   }, [searchQuery]);
 
+  const buildFilterParams = useCallback(
+    (): GetAttendeesParams => ({
+      campus: campusCode === "all" ? undefined : campusCode,
+      search: debouncedSearchQuery || undefined,
+      attendanceStatus:
+        activeFilters.attendanceStatus.length > 0
+          ? activeFilters.attendanceStatus
+          : undefined,
+      course:
+        activeFilters.course.length > 0 ? activeFilters.course : undefined,
+      yearLevel:
+        activeFilters.yearLevel.length > 0
+          ? activeFilters.yearLevel
+          : undefined,
+      registeredOn: activeFilters.registeredOn
+        ? toLocalYyyyMmDd(activeFilters.registeredOn)
+        : undefined,
+    }),
+    [campusCode, debouncedSearchQuery, activeFilters]
+  );
+
   // Fetch attendees from API
   useEffect(() => {
     let isMounted = true;
@@ -148,23 +171,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
       setLoadError(null);
 
       const params: GetAttendeesParams = {
+        ...buildFilterParams(),
         page: currentPage,
         limit: pagination.limit,
-        campus: campusCode === "all" ? undefined : campusCode,
-        search: debouncedSearchQuery || undefined,
-        attendanceStatus:
-          activeFilters.attendanceStatus.length > 0
-            ? activeFilters.attendanceStatus
-            : undefined,
-        course:
-          activeFilters.course.length > 0 ? activeFilters.course : undefined,
-        yearLevel:
-          activeFilters.yearLevel.length > 0
-            ? activeFilters.yearLevel
-            : undefined,
-        registeredOn: activeFilters.registeredOn
-          ? toLocalYyyyMmDd(activeFilters.registeredOn)
-          : undefined,
       };
 
       const result = await getAttendees(eventId, params);
@@ -220,15 +229,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [
-    eventId,
-    campusCode,
-    currentPage,
-    pagination.limit,
-    debouncedSearchQuery,
-    activeFilters,
-    refreshTick,
-  ]);
+  }, [eventId, buildFilterParams, currentPage, pagination.limit, refreshTick]);
 
   const paginatedAttendees = attendees;
   const totalPages = pagination.totalPages;
@@ -245,62 +246,159 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     setCurrentPage(1);
   };
 
-  const handleExportCSV = () => {
-    if (attendees.length === 0) {
-      showToast("warning", "No attendees to export");
-      return;
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const params: GetAttendeesParams = {
+        ...buildFilterParams(),
+        exportAll: true,
+      };
+
+      const result = await getAttendees(eventId, params);
+
+      if (!result || result.data.length === 0) {
+        showToast("warning", "No attendees to export");
+        return;
+      }
+
+      const exportAttendees: Attendee[] = result.data.map((attendee) => ({
+        id: attendee.id_number,
+        name: attendee.name,
+        email:
+          typeof attendee.email === "string" && attendee.email.trim().length > 0
+            ? attendee.email
+            : `${attendee.id_number}@uc.edu.ph`,
+        studentId: attendee.id_number,
+        attendance: attendee.attendance,
+        courseYear: `${attendee.course} - ${attendee.year}`,
+        registeredOn: attendee.transactDate
+          ? new Date(attendee.transactDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            }) +
+            "\n" +
+            new Date(attendee.transactDate).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "--",
+        registeredBy: attendee.transactBy || "--",
+        campus: attendee.campus,
+        shirtSize: attendee.shirtSize,
+        shirtPrice: attendee.shirtPrice?.toString(),
+      }));
+
+      const headers = [
+        "Student ID",
+        "Name",
+        "Email",
+        "Campus",
+        "Course",
+        "Year",
+        "Status",
+        "Registered On",
+        "Registered By",
+        "Shirt Size",
+        "Shirt Price",
+      ];
+
+      const rows = exportAttendees.map((attendee) => [
+        attendee.studentId,
+        attendee.name,
+        attendee.email,
+        attendee.campus || "",
+        attendee.courseYear.split(" - ")[0] || "",
+        attendee.courseYear.split(" - ")[1] || "",
+        getAttendanceSummary(attendee.attendance),
+        attendee.registeredOn.replace("\n", " "),
+        attendee.registeredBy,
+        attendee.shirtSize || "",
+        attendee.shirtPrice || "",
+      ]);
+
+      const csvContent = [
+        headers.map((h) => `"${h}"`).join(","),
+        ...rows.map((row) =>
+          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `attendees-${venue.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast(
+        "success",
+        `${exportAttendees.length} attendees exported successfully`
+      );
+    } catch {
+      showToast("error", "Failed to export attendees");
+    } finally {
+      setIsExporting(false);
     }
+  };
 
-    const headers = [
-      "Student ID",
-      "Name",
-      "Email",
-      "Campus",
-      "Course",
-      "Year",
-      "Status",
-      "Registered On",
-      "Registered By",
-      "Shirt Size",
-      "Shirt Price",
-    ];
+  const hasActiveFilters =
+    activeFilters.attendanceStatus.length > 0 ||
+    activeFilters.course.length > 0 ||
+    activeFilters.yearLevel.length > 0 ||
+    activeFilters.registeredOn !== undefined;
 
-    const rows = attendees.map((attendee) => [
-      attendee.studentId,
-      attendee.name,
-      attendee.email,
-      attendee.campus || "",
-      attendee.courseYear.split(" - ")[0] || "",
-      attendee.courseYear.split(" - ")[1] || "",
-      getAttendanceSummary(attendee.attendance),
-      attendee.registeredOn.replace("\n", " "),
-      attendee.registeredBy,
-      attendee.shirtSize || "",
-      attendee.shirtPrice || "",
-    ]);
+  const ATTENDANCE_STATUS_LABELS: Record<string, string> = {
+    morning_attended: "Morning Attended",
+    afternoon_attended: "Afternoon Attended",
+    evening_attended: "Evening Attended",
+    no_sessions_attended: "No Sessions Attended",
+  };
 
-    const csvContent = [
-      headers.map((h) => `"${h}"`).join(","),
-      ...rows.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
-      ),
-    ].join("\n");
+  const YEAR_LEVEL_LABELS: Record<number, string> = {
+    1: "1st Year",
+    2: "2nd Year",
+    3: "3rd Year",
+    4: "4th Year",
+  };
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `attendees-${venue.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const handleRemoveFilter = (
+    category: keyof FilterOptions,
+    value?: string | number
+  ) => {
+    setActiveFilters((prev) => {
+      const next = { ...prev };
+      if (category === "registeredOn") {
+        next.registeredOn = undefined;
+      } else if (category === "attendanceStatus" && typeof value === "string") {
+        next.attendanceStatus = prev.attendanceStatus.filter(
+          (v) => v !== value
+        );
+      } else if (category === "course" && typeof value === "string") {
+        next.course = prev.course.filter((v) => v !== value);
+      } else if (category === "yearLevel" && typeof value === "number") {
+        next.yearLevel = prev.yearLevel.filter((v) => v !== value);
+      }
+      return next;
+    });
+    setCurrentPage(1);
+  };
 
-    showToast("success", "Attendees exported successfully");
+  const handleClearAllFilters = () => {
+    setActiveFilters({
+      attendanceStatus: [],
+      course: [],
+      yearLevel: [],
+      registeredOn: undefined,
+    });
+    setCurrentPage(1);
   };
 
   const handleAddAttendee = () => {
@@ -424,22 +522,103 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
             variant="outline"
             size="sm"
             onClick={handleFilter}
-            className="cursor-pointer rounded-xl"
+            className="relative cursor-pointer rounded-xl"
           >
             <Filter className="mr-2 h-4 w-4" />
             Filter
+            {hasActiveFilters && (
+              <span className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#1C9DDE] text-[10px] font-bold text-white">
+                {activeFilters.attendanceStatus.length +
+                  activeFilters.course.length +
+                  activeFilters.yearLevel.length +
+                  (activeFilters.registeredOn ? 1 : 0)}
+              </span>
+            )}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleExportCSV}
+            disabled={isExporting}
             className="cursor-pointer rounded-xl"
           >
-            <Download className="mr-2 h-4 w-4" />
-            Export to CSV
+            {isExporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            {isExporting ? "Exporting..." : "Export to CSV"}
           </Button>
         </div>
       </div>
+
+      {/* Active Filter Tags */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-xs font-medium">
+            Filters:
+          </span>
+          {activeFilters.attendanceStatus.map((status) => (
+            <span
+              key={status}
+              className="inline-flex items-center gap-1 rounded-full border border-[#1C9DDE]/30 bg-[#1C9DDE]/10 px-2.5 py-0.5 text-xs font-medium text-[#1C9DDE]"
+            >
+              {ATTENDANCE_STATUS_LABELS[status] || status}
+              <button
+                onClick={() => handleRemoveFilter("attendanceStatus", status)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-[#1C9DDE]/20"
+              >
+                <X className="h-3 w-3 cursor-pointer" />
+              </button>
+            </span>
+          ))}
+          {activeFilters.course.map((course) => (
+            <span
+              key={course}
+              className="inline-flex items-center gap-1 rounded-full border border-[#1C9DDE]/30 bg-[#1C9DDE]/10 px-2.5 py-0.5 text-xs font-medium text-[#1C9DDE]"
+            >
+              {course}
+              <button
+                onClick={() => handleRemoveFilter("course", course)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-[#1C9DDE]/20"
+              >
+                <X className="h-3 w-3 cursor-pointer" />
+              </button>
+            </span>
+          ))}
+          {activeFilters.yearLevel.map((year) => (
+            <span
+              key={year}
+              className="inline-flex items-center gap-1 rounded-full border border-[#1C9DDE]/30 bg-[#1C9DDE]/10 px-2.5 py-0.5 text-xs font-medium text-[#1C9DDE]"
+            >
+              {YEAR_LEVEL_LABELS[year] || `Year ${year}`}
+              <button
+                onClick={() => handleRemoveFilter("yearLevel", year)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-[#1C9DDE]/20"
+              >
+                <X className="h-3 w-3 cursor-pointer" />
+              </button>
+            </span>
+          ))}
+          {activeFilters.registeredOn && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#1C9DDE]/30 bg-[#1C9DDE]/10 px-2.5 py-0.5 text-xs font-medium text-[#1C9DDE]">
+              {format(activeFilters.registeredOn, "MMM dd, yyyy")}
+              <button
+                onClick={() => handleRemoveFilter("registeredOn")}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-[#1C9DDE]/20"
+              >
+                <X className="h-3 w-3 cursor-pointer" />
+              </button>
+            </span>
+          )}
+          <button
+            onClick={handleClearAllFilters}
+            className="text-muted-foreground hover:text-foreground cursor-pointer text-xs underline"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-hidden rounded-lg border">
@@ -628,6 +807,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         open={isFilterOpen}
         onOpenChange={setIsFilterOpen}
         onApplyFilter={handleApplyFilter}
+        activeFilters={activeFilters}
       />
       <AddAttendeeModal
         open={isAddAttendeeOpen}

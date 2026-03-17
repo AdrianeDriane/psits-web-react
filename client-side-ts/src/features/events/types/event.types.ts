@@ -65,6 +65,7 @@ export interface EventData {
 export interface Attendee {
   id_number: string;
   name: string;
+  email?: string;
   campus: string;
   course: string;
   year: number;
@@ -121,6 +122,7 @@ export interface GetAttendeesParams {
   course?: string[];
   yearLevel?: number[];
   registeredOn?: string;
+  exportAll?: boolean;
 }
 
 export interface AttendeesPagination {
@@ -259,6 +261,7 @@ export interface AddAttendeeV2Payload {
   course: string;
   yearLevel: string;
   shirtSize?: string;
+  shirtPrice: number;
   password: string;
 }
 
