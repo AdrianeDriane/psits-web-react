@@ -30,6 +30,8 @@ import {
   AttendanceStatusModal,
   MarkAttendanceModal,
   ScanQRModal,
+  EditAttendeeModal,
+  ChangePasswordModal,
 } from "./modals";
 import type { FilterOptions, AttendeeFormData } from "./modals";
 import type {
@@ -108,6 +110,10 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     useState<Attendee | null>(null);
   const [isScanQROpen, setIsScanQROpen] = useState(false);
   const [isMarkAttendanceOpen, setIsMarkAttendanceOpen] = useState(false);
+  const [isEditAttendeeOpen, setIsEditAttendeeOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [editTargetIdNumber, setEditTargetIdNumber] = useState("");
+  const [editTargetName, setEditTargetName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -469,6 +475,25 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     }
   };
 
+  const NON_UC_MAIN_EDIT_CAMPUSES = ["UC-Banilad", "UC-LM", "UC-PT"];
+  const showEditActions = NON_UC_MAIN_EDIT_CAMPUSES.includes(adminCampus ?? "");
+
+  const handleEditAttendee = () => {
+    if (!selectedStudent) return;
+    setEditTargetIdNumber(selectedStudent.studentId);
+    setEditTargetName(selectedStudent.name);
+    setIsStudentDetailsOpen(false);
+    setIsEditAttendeeOpen(true);
+  };
+
+  const handleChangePassword = () => {
+    if (!selectedStudent) return;
+    setEditTargetIdNumber(selectedStudent.studentId);
+    setEditTargetName(selectedStudent.name);
+    setIsStudentDetailsOpen(false);
+    setIsChangePasswordOpen(true);
+  };
+
   return (
     <div className="space-y-4">
       {/* Venue Title */}
@@ -821,6 +846,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         open={isStudentDetailsOpen}
         onOpenChange={setIsStudentDetailsOpen}
         student={selectedStudent}
+        showEditActions={showEditActions}
+        onEditAttendee={handleEditAttendee}
+        onChangePassword={handleChangePassword}
       />
       <AttendanceStatusModal
         open={isAttendanceStatusOpen}
@@ -850,6 +878,23 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         onOpenChange={setIsMarkAttendanceOpen}
         eventId={eventId}
         onAttendanceMarked={() => setRefreshTick((t) => t + 1)}
+      />
+      <EditAttendeeModal
+        open={isEditAttendeeOpen}
+        onOpenChange={setIsEditAttendeeOpen}
+        onEditComplete={() => setRefreshTick((t) => t + 1)}
+        eventId={eventId}
+        attendeeIdNumber={editTargetIdNumber}
+        adminCampus={adminCampus}
+        merch={merch}
+      />
+      <ChangePasswordModal
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        onPasswordChanged={() => setRefreshTick((t) => t + 1)}
+        eventId={eventId}
+        attendeeIdNumber={editTargetIdNumber}
+        attendeeName={editTargetName}
       />
     </div>
   );
