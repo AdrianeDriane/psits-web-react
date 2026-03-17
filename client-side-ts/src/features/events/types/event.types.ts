@@ -65,6 +65,7 @@ export interface EventData {
 export interface Attendee {
   id_number: string;
   name: string;
+  email?: string;
   campus: string;
   course: string;
   year: number;

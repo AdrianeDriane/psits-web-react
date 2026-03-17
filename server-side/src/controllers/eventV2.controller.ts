@@ -295,6 +295,7 @@ const filterAttendees = (
 interface AttendeeResponseDto {
   id_number: string;
   name: string;
+  email?: string;
   course: string;
   year: number;
   campus: string;
@@ -509,6 +510,40 @@ export const getEventAttendeesV2Controller = async (
     });
 
     const total = filteredAttendees.length;
+
+    if (params.exportAll) {
+      const idNumbers = filteredAttendees.map((a) => a.id_number);
+      const students = await Student.find(
+        { id_number: { $in: idNumbers } },
+        { id_number: 1, email: 1 }
+      ).lean();
+
+      const emailMap = new Map(students.map((s) => [s.id_number, s.email]));
+
+      const exportData = mapPaginatedAttendees(filteredAttendees).map(
+        (attendee) => ({
+          ...attendee,
+          email: emailMap.get(attendee.id_number) || undefined,
+        })
+      );
+
+      return res.status(200).json({
+        data: exportData,
+        pagination: {
+          page: 1,
+          limit: total,
+          total,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+        access: {
+          isUcMainAdmin,
+          campusScope: effectiveCampus ?? "all",
+        },
+      });
+    }
+
     const totalPages = total === 0 ? 1 : Math.ceil(total / params.limit);
     const page = Math.min(params.page, totalPages);
     const startIndex = (page - 1) * params.limit;
