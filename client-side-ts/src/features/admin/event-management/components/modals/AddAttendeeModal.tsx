@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { X, Eye, EyeOff, Loader2 } from "lucide-react";
+import { X, Eye, EyeOff, Loader2, Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,12 @@ export interface AttendeeFormData {
   password: string;
   confirmPassword: string;
 }
+
+const CAMPUS_ID_SUFFIX_LABELS: Record<string, string> = {
+  "UC-Banilad": "ucb",
+  "UC-LM": "uclm",
+  "UC-PT": "ucpt",
+};
 
 const COURSE_OPTIONS = ["BSIT", "BSCS", "ACT"];
 const YEAR_LEVEL_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
@@ -178,6 +184,8 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
     return Object.keys(merch.selectedSizes);
   }, [merch]);
 
+  const suffixLabel = adminCampus ? CAMPUS_ID_SUFFIX_LABELS[adminCampus] : null;
+
   useEffect(() => {
     if (!adminCampus) return;
 
@@ -192,27 +200,9 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
       setFormData((prev) => ({
         ...prev,
         shirtSize: "",
-        shirtPrice: "",
       }));
-      return;
     }
-
-    if (!formData.shirtSize) {
-      setFormData((prev) => ({
-        ...prev,
-        shirtPrice: "",
-      }));
-      return;
-    }
-
-    const selected = merch?.selectedSizes?.[formData.shirtSize];
-    const priceString = selected?.price ? String(selected.price) : "";
-
-    setFormData((prev) => ({
-      ...prev,
-      shirtPrice: priceString,
-    }));
-  }, [formData.shirtSize, isShirtFieldVisible, merch]);
+  }, [isShirtFieldVisible]);
 
   const handleChange = (field: keyof AttendeeFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -272,6 +262,16 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
       nextErrors.shirtSize = REQUIRED_MESSAGE;
     }
 
+    // Price validation (always required)
+    if (!formData.shirtPrice.trim()) {
+      nextErrors.shirtPrice = REQUIRED_MESSAGE;
+    } else {
+      const priceNum = Number(formData.shirtPrice);
+      if (!Number.isFinite(priceNum) || priceNum < 0) {
+        nextErrors.shirtPrice = "Price must be a non-negative number";
+      }
+    }
+
     // Password validation
     const passwordError = validatePassword(formData.password);
     if (passwordError) {
@@ -306,6 +306,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
         course: formData.course.trim(),
         yearLevel: formData.yearLevel,
         shirtSize: formData.shirtSize.trim() || undefined,
+        shirtPrice: Number(formData.shirtPrice),
         password: formData.password,
       });
 
@@ -368,11 +369,12 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
     .filter(Boolean)
     .join(" ");
 
-  const previewInitials = `${formData.firstName.trim().charAt(0)}${formData.lastName
-    .trim()
-    .charAt(0)}`
-    .toUpperCase()
-    .trim();
+  const previewInitials =
+    `${formData.firstName.trim().charAt(0)}${formData.lastName
+      .trim()
+      .charAt(0)}`
+      .toUpperCase()
+      .trim();
 
   const previewRows: Array<{ label: string; value: string }> = [
     { label: "Student ID", value: formData.studentId.trim() || "--" },
@@ -391,11 +393,11 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
       label: "Shirt Size",
       value: formData.shirtSize.trim() || "--",
     });
-    previewRows.push({
-      label: "Shirt Price",
-      value: formData.shirtPrice.trim() ? `PHP ${formData.shirtPrice}` : "--",
-    });
   }
+  previewRows.push({
+    label: "Price",
+    value: formData.shirtPrice.trim() ? `PHP ${formData.shirtPrice}` : "--",
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
@@ -453,7 +455,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                         index !== previewRows.length - 1 ? "border-b" : ""
                       }`}
                     >
-                      <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                         {field.label}
                       </p>
                       <p className="text-sm leading-6 break-words">
@@ -464,7 +466,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 </div>
               </div>
 
-              <div className="border-amber-200 bg-amber-50/70 rounded-xl border px-4 py-3">
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3">
                 <p className="text-xs leading-relaxed text-amber-900">
                   Please verify all values before submission. Accurate attendee
                   records reduce account duplication, failed notifications, and
@@ -474,6 +476,19 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Credential note for campuses with suffixed IDs */}
+              {suffixLabel && (
+                <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3">
+                  <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+                  <p className="text-xs leading-relaxed text-blue-900">
+                    This student&apos;s login credentials will use the
+                    campus-suffixed ID format (e.g., 21123456-{suffixLabel} for{" "}
+                    {adminCampus}). Please ensure the student is aware of their
+                    full login ID.
+                  </p>
+                </div>
+              )}
+
               {/* Student ID Number */}
               <div>
                 <Label htmlFor="studentId" className="mb-2">
@@ -563,7 +578,9 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                   onChange={(e) => handleChange("email", e.target.value)}
                 />
                 {errors.email ? (
-                  <p className="text-destructive mt-1 text-xs">{errors.email}</p>
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.email}
+                  </p>
                 ) : null}
               </div>
 
@@ -638,55 +655,60 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                 </div>
               </div>
 
-              {/* Shirt Size and Price */}
+              {/* Shirt Size (conditional) */}
               {isShirtFieldVisible ? (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="shirtSize" className="mb-2">
-                      Shirt Size
-                    </Label>
-                    <Select
-                      value={formData.shirtSize}
-                      onValueChange={(value) => handleChange("shirtSize", value)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {shirtSizeOptions.map((size) => (
-                          <SelectItem key={size} value={size}>
-                            {size}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.shirtSize ? (
-                      <p className="text-destructive mt-1 text-xs">
-                        {errors.shirtSize}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div>
-                    <Label htmlFor="shirtPrice" className="mb-2">
-                      Price
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="shirtPrice"
-                        type="number"
-                        placeholder="Price"
-                        value={formData.shirtPrice}
-                        className="pr-12"
-                        disabled
-                        readOnly
-                      />
-                      <div className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium">
-                        PHP
-                      </div>
-                    </div>
-                  </div>
+                <div>
+                  <Label htmlFor="shirtSize" className="mb-2">
+                    Shirt Size
+                  </Label>
+                  <Select
+                    value={formData.shirtSize}
+                    onValueChange={(value) => handleChange("shirtSize", value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shirtSizeOptions.map((size) => (
+                        <SelectItem key={size} value={size}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.shirtSize ? (
+                    <p className="text-destructive mt-1 text-xs">
+                      {errors.shirtSize}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
+
+              {/* Price (always visible and editable) */}
+              <div>
+                <Label htmlFor="shirtPrice" className="mb-2">
+                  Price
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="shirtPrice"
+                    type="number"
+                    placeholder="Enter price"
+                    value={formData.shirtPrice}
+                    onChange={(e) => handleChange("shirtPrice", e.target.value)}
+                    className="pr-12"
+                    min="0"
+                  />
+                  <div className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium">
+                    PHP
+                  </div>
+                </div>
+                {errors.shirtPrice ? (
+                  <p className="text-destructive mt-1 text-xs">
+                    {errors.shirtPrice}
+                  </p>
+                ) : null}
+              </div>
 
               {/* Password Fields */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -723,8 +745,7 @@ export const AddAttendeeModal: React.FC<AddAttendeeModalProps> = ({
                     </p>
                   ) : null}
                   <p className="text-muted-foreground mt-1 text-xs">
-                    Min. 8 characters with uppercase, lowercase, number &
-                    symbol
+                    Min. 8 characters with uppercase, lowercase, number & symbol
                   </p>
                 </div>
                 <div>

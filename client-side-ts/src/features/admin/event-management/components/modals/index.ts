@@ -14,3 +14,5 @@ export { MarkAttendanceModal } from "./MarkAttendanceModal";
 export { ScanQRModal } from "./ScanQRModal";
 export { EditEventModal } from "./EditEventModal";
 export { AttendanceStatusModal } from "./AttendanceStatusModal";
+export { EditAttendeeModal } from "./EditAttendeeModal";
+export { ChangePasswordModal } from "./ChangePasswordModal";

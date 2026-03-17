@@ -1,5 +1,5 @@
 import React from "react";
-import { X } from "lucide-react";
+import { X, Pencil, KeyRound } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,9 @@ interface StudentDetailsModalProps {
     shirtSize?: string;
     shirtPrice?: string;
   } | null;
+  showEditActions?: boolean;
+  onEditAttendee?: () => void;
+  onChangePassword?: () => void;
 }
 
 const DetailRow = ({
@@ -50,6 +53,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   open,
   onOpenChange,
   student,
+  showEditActions = false,
+  onEditAttendee,
+  onChangePassword,
 }) => {
   if (!student) return null;
 
@@ -87,7 +93,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
           <DetailRow label="Name" value={student.name} />
           <DetailRow label="Course & Year" value={student.courseYear} />
 
-          {student.campus && <DetailRow label="Campus" value={student.campus} />}
+          {student.campus && (
+            <DetailRow label="Campus" value={student.campus} />
+          )}
           {student.shirtSize && (
             <DetailRow label="Shirt Size" value={student.shirtSize} />
           )}
@@ -97,6 +105,29 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
               value={`PHP ${student.shirtPrice}`}
               valueClassName="text-[#1C9DDE]"
             />
+          )}
+
+          {showEditActions && (
+            <div className="flex gap-2 border-t pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEditAttendee}
+                className="flex-1 cursor-pointer"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Attendee
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onChangePassword}
+                className="flex-1 cursor-pointer"
+              >
+                <KeyRound className="mr-2 h-4 w-4" />
+                Change Password
+              </Button>
+            </div>
           )}
         </div>
       </DialogContent>
