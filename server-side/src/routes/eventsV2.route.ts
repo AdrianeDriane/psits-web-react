@@ -13,6 +13,9 @@ import {
   getEventStatisticsV2Controller,
   getMyEventsController,
   markAttendanceV2Controller,
+  getEditableAttendeeV2Controller,
+  editAttendeeV2Controller,
+  changeAttendeePasswordV2Controller,
 } from "../controllers/eventV2.controller";
 
 const router = Router();
@@ -72,6 +75,30 @@ router.put(
   requireAccessTokenWithDBCheck,
   roleAuthenticateV2(["Admin"]),
   markAttendanceV2Controller
+);
+
+// GET editable attendee data (includes student name components)
+router.get(
+  "/:eventId/attendees/:idNumber/editable",
+  requireAccessTokenWithDBCheck,
+  roleAuthenticateV2(["Admin"]),
+  getEditableAttendeeV2Controller
+);
+
+// PUT edit attendee details
+router.put(
+  "/:eventId/attendees/:idNumber",
+  requireAccessTokenWithDBCheck,
+  roleAuthenticateV2(["Admin"]),
+  editAttendeeV2Controller
+);
+
+// PUT change attendee password
+router.put(
+  "/:eventId/attendees/:idNumber/password",
+  requireAccessTokenWithDBCheck,
+  roleAuthenticateV2(["Admin"]),
+  changeAttendeePasswordV2Controller
 );
 
 export default router;
