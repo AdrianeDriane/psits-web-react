@@ -28,13 +28,19 @@ import {
   MarkAttendanceButton,
   StudentDetailsModal,
   AttendanceStatusModal,
+  MarkAttendanceModal,
+  ScanQRModal,
+  EditAttendeeModal,
+  ChangePasswordModal,
 } from "./modals";
 import type { FilterOptions, AttendeeFormData } from "./modals";
 import type {
   AttendeesPagination,
   GetAttendeesParams,
   EventMerchMeta,
+  QRCodePayloadV2,
 } from "@/features/events/types/event.types";
+import { markAttendanceV2 } from "@/features/events/api/eventService";
 import { CampusView } from "@/components/common/CampusView";
 
 interface Attendee {
@@ -62,6 +68,7 @@ interface Attendee {
   campus?: string;
   shirtSize?: string;
   shirtPrice?: string;
+  confirmedBy?: string;
 }
 
 interface AttendeesTableProps {
@@ -71,6 +78,7 @@ interface AttendeesTableProps {
   adminCampus?: string;
   merch?: EventMerchMeta | null;
   eventStatus?: "ongoing" | "ended" | "upcoming";
+  attendanceType?: "open" | "ticketed";
 }
 
 export const AttendeesTable: React.FC<AttendeesTableProps> = ({
@@ -80,6 +88,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   adminCampus,
   merch,
   eventStatus,
+  attendanceType: _attendanceType,
 }) => {
   const toLocalYyyyMmDd = (date: Date): string => {
     const year = date.getFullYear();
@@ -99,6 +108,12 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const [isAttendanceStatusOpen, setIsAttendanceStatusOpen] = useState(false);
   const [selectedAttendanceAttendee, setSelectedAttendanceAttendee] =
     useState<Attendee | null>(null);
+  const [isScanQROpen, setIsScanQROpen] = useState(false);
+  const [isMarkAttendanceOpen, setIsMarkAttendanceOpen] = useState(false);
+  const [isEditAttendeeOpen, setIsEditAttendeeOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [editTargetIdNumber, setEditTargetIdNumber] = useState("");
+  const [editTargetName, setEditTargetName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -198,6 +213,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
           campus: attendee.campus,
           shirtSize: attendee.shirtSize,
           shirtPrice: attendee.shirtPrice?.toString(),
+          confirmedBy: attendee.confirmedBy,
         }));
         setAttendees(mappedAttendees);
 
@@ -459,6 +475,25 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
     }
   };
 
+  const NON_UC_MAIN_EDIT_CAMPUSES = ["UC-Banilad", "UC-LM", "UC-PT"];
+  const showEditActions = NON_UC_MAIN_EDIT_CAMPUSES.includes(adminCampus ?? "");
+
+  const handleEditAttendee = () => {
+    if (!selectedStudent) return;
+    setEditTargetIdNumber(selectedStudent.studentId);
+    setEditTargetName(selectedStudent.name);
+    setIsStudentDetailsOpen(false);
+    setIsEditAttendeeOpen(true);
+  };
+
+  const handleChangePassword = () => {
+    if (!selectedStudent) return;
+    setEditTargetIdNumber(selectedStudent.studentId);
+    setEditTargetName(selectedStudent.name);
+    setIsStudentDetailsOpen(false);
+    setIsChangePasswordOpen(true);
+  };
+
   return (
     <div className="space-y-4">
       {/* Venue Title */}
@@ -484,8 +519,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
           <div className="flex-1 sm:flex-none">
             <MarkAttendanceButton
               className="w-full"
-              onScanQR={() => undefined}
-              onEnterStudentId={() => undefined}
+              onScanQR={() => setIsScanQROpen(true)}
+              onEnterStudentId={() => setIsMarkAttendanceOpen(true)}
+              isSessionActive={eventStatus === "ongoing"}
             />
           </div>
         </div>
@@ -810,6 +846,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         open={isStudentDetailsOpen}
         onOpenChange={setIsStudentDetailsOpen}
         student={selectedStudent}
+        showEditActions={showEditActions}
+        onEditAttendee={handleEditAttendee}
+        onChangePassword={handleChangePassword}
       />
       <AttendanceStatusModal
         open={isAttendanceStatusOpen}
@@ -817,6 +856,45 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = ({
         attendeeName={selectedAttendanceAttendee?.name ?? ""}
         attendance={selectedAttendanceAttendee?.attendance}
         isAttendanceAvailable={isAttendanceAvailable}
+        confirmedBy={selectedAttendanceAttendee?.confirmedBy}
+      />
+      <ScanQRModal
+        open={isScanQROpen}
+        onOpenChange={setIsScanQROpen}
+        onScanSuccess={async (payload: QRCodePayloadV2) => {
+          const result = await markAttendanceV2(eventId, payload.studentId, {
+            campus: payload.campus,
+            attendeeName: payload.name,
+            course: payload.course ?? "Unknown",
+            year: payload.year ?? 1,
+          });
+          if (result) {
+            setRefreshTick((t) => t + 1);
+          }
+        }}
+      />
+      <MarkAttendanceModal
+        open={isMarkAttendanceOpen}
+        onOpenChange={setIsMarkAttendanceOpen}
+        eventId={eventId}
+        onAttendanceMarked={() => setRefreshTick((t) => t + 1)}
+      />
+      <EditAttendeeModal
+        open={isEditAttendeeOpen}
+        onOpenChange={setIsEditAttendeeOpen}
+        onEditComplete={() => setRefreshTick((t) => t + 1)}
+        eventId={eventId}
+        attendeeIdNumber={editTargetIdNumber}
+        adminCampus={adminCampus}
+        merch={merch}
+      />
+      <ChangePasswordModal
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        onPasswordChanged={() => setRefreshTick((t) => t + 1)}
+        eventId={eventId}
+        attendeeIdNumber={editTargetIdNumber}
+        attendeeName={editTargetName}
       />
     </div>
   );

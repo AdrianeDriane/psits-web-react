@@ -10,19 +10,57 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-// import { QRCodeDisplay } from '@/features/events/components/QRCodeDisplay';
-// import { getMerchByEventId } from '@/features/merch/api/merchService';
-// import type { MerchData } from '@/features/merch/types/merch.types';
+import {
+  ATTENDANCE_STATUS,
+  ATTENDANCE_COLORS,
+} from "@/constants/attendance.constants";
+import { QRCodeDisplay } from "@/features/events/components/QRCodeDisplay";
+import { SessionStatusList } from "@/features/events/components/SessionStatusList";
 import { useAuth } from "@/features/auth";
 import type { EventData } from "@/features/events/types/event.types";
-import { CalendarDays, CheckCircle2, MapPin, XCircle } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
-// import { useNavigate } from 'react-router-dom';
+import { createQRPayload } from "@/features/events/utils/qrPayload.utils";
+import {
+  CalendarDays,
+  CheckCircle2,
+  MapPin,
+  XCircle,
+  Ticket,
+} from "lucide-react";
+import React, { useMemo, useState } from "react";
 
 interface EventCardProps {
   event: EventData;
   studentId: string;
 }
+
+const AttendancePill = React.memo<{ attended: boolean; label?: string }>(
+  ({ attended, label }) => (
+    <div className="flex items-center gap-1.5">
+      {attended ? (
+        <CheckCircle2
+          className={`h-4 w-4 flex-shrink-0 ${ATTENDANCE_COLORS.present.icon}`}
+        />
+      ) : (
+        <XCircle
+          className={`h-4 w-4 flex-shrink-0 ${ATTENDANCE_COLORS.absent.icon}`}
+        />
+      )}
+      {label && (
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+      )}
+      <Badge
+        variant="outline"
+        className={`border-0 text-xs font-semibold ${
+          attended
+            ? ATTENDANCE_COLORS.present.badge
+            : ATTENDANCE_COLORS.absent.badge
+        }`}
+      >
+        {attended ? ATTENDANCE_STATUS.PRESENT : ATTENDANCE_STATUS.ABSENT}
+      </Badge>
+    </div>
+  )
+);
 
 export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
   const {
@@ -34,62 +72,17 @@ export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
     sessionConfig,
     isPast,
   } = event;
-  const { user: _user } = useAuth();
-  // const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const fallbackImage = defaultThumbnail;
-  const [imgSrc, setImgSrc] = useState<string>(imageUrl || fallbackImage);
-  const [imgLoading, setImgLoading] = useState(!!imageUrl);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const [loadedSrc, setLoadedSrc] = useState<string>("");
 
-  // ── Merch fetch commented out for staging ─────────────────────────────────
-  // const [activeMerch, setActiveMerch] = useState<MerchData | null>(null);
-  // const [merchChecked, setMerchChecked] = useState(false);
-  // useEffect(() => {
-  //   if (attendanceType !== 'ticketed' || !!studentAttendee || !event.id) return;
-  //   let cancelled = false;
-  //   const fetchMerch = async () => {
-  //     try {
-  //       const result = await getMerchByEventId(event.id!);
-  //       if (cancelled) return;
-  //       if (!result || (Array.isArray(result) && result.length === 0)) {
-  //         setActiveMerch(null);
-  //         setMerchChecked(true);
-  //         return;
-  //       }
-  //       const merchArray: MerchData[] = Array.isArray(result) ? result : [result];
-  //       const now = new Date();
-  //       const audience = user?.course ?? '';
-  //       const active = merchArray.find((item) => {
-  //         const endDate = new Date(item.end_date);
-  //         const audiences: string[] = item.selectedAudience.includes(',')
-  //           ? item.selectedAudience.split(',').map((a) => a.trim())
-  //           : [item.selectedAudience];
-  //         return (
-  //           item.is_active &&
-  //           now <= endDate &&
-  //           (audiences.includes('all') || audiences.some((a) => audience.includes(a)))
-  //         );
-  //       });
-  //       setActiveMerch(active ?? null);
-  //     } catch {
-  //       setActiveMerch(null);
-  //     } finally {
-  //       if (!cancelled) setMerchChecked(true);
-  //     }
-  //   };
-  //   fetchMerch();
-  //   return () => { cancelled = true; };
-  // }, [attendanceType, studentAttendee, event.id, user?.course]);
+  const imgSrc = useMemo(() => {
+    if (!imageUrl) return defaultThumbnail;
+    return failedImageUrl === imageUrl ? defaultThumbnail : imageUrl;
+  }, [imageUrl, failedImageUrl]);
 
-  useEffect(() => {
-    if (imageUrl) {
-      setImgSrc(imageUrl);
-      setImgLoading(true);
-    } else {
-      setImgSrc(fallbackImage);
-      setImgLoading(false);
-    }
-  }, [imageUrl]);
+  const imgLoading = loadedSrc !== imgSrc;
 
   // ── Student attendee lookup ────────────────────────────────────────────────
   const studentAttendee = useMemo(() => {
@@ -149,41 +142,30 @@ export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
     [sessions]
   );
 
-  // ── Shared pill ───────────────────────────────────────────────────────────
-  const AttendancePill: React.FC<{ attended: boolean; label?: string }> = ({
-    attended,
-    label,
-  }) => (
-    <div className="flex items-center gap-1.5">
-      {attended ? (
-        <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-600" />
-      ) : (
-        <XCircle className="h-4 w-4 flex-shrink-0 text-red-400" />
-      )}
-      {label && (
-        <span className="text-xs font-medium text-gray-600">{label}</span>
-      )}
-      <Badge
-        variant="outline"
-        className={`border-0 text-xs font-semibold ${
-          attended ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700"
-        }`}
-      >
-        {attended ? "Present" : "Absent"}
-      </Badge>
-    </div>
-  );
+  // ── QR code value ────────────────────────────────────────────────────────
+  const qrValue = useMemo(() => {
+    return JSON.stringify(
+      createQRPayload(
+        event.id,
+        studentId,
+        studentAttendee?.name ?? user?.name ?? "",
+        user?.campus ?? "",
+        user?.course ?? "",
+        Number(user?.year) || 1
+      )
+    );
+  }, [
+    event.id,
+    studentId,
+    studentAttendee?.name,
+    user?.name,
+    user?.campus,
+    user?.course,
+    user?.year,
+  ]);
 
-  // ── Ticket / QR section — replaced with Coming Soon for staging ───────────
-  const QRSection: React.FC = () => (
-    <div className="flex flex-col items-center gap-3 px-4 py-6 text-center">
-      <span className="text-4xl">🚧</span>
-      <p className="text-sm font-semibold text-gray-700">Feature Coming Soon</p>
-      <p className="max-w-[220px] text-xs text-gray-400">
-        QR Code attendance will be available in the next update.
-      </p>
-    </div>
-  );
+  // If ticketed and not an attendee, student needs a ticket first
+  const canShowQR = event.attendanceType !== "ticketed" || !!studentAttendee;
 
   return (
     <Card className="h-full rounded-2xl transition-all hover:shadow-md">
@@ -198,10 +180,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
             alt={title}
             className={`h-full w-full object-cover transition-opacity ${imgLoading ? "opacity-0" : "opacity-100"}`}
             onError={() => {
-              setImgSrc(fallbackImage);
-              setImgLoading(false);
+              if (imageUrl) {
+                setFailedImageUrl(imageUrl);
+              }
             }}
-            onLoad={() => setImgLoading(false)}
+            onLoad={() => setLoadedSrc(imgSrc)}
           />
           {isPast && (
             <div className="absolute inset-0 flex items-end bg-black/30 p-2">
@@ -248,48 +231,16 @@ export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
               {!studentAttendee || (sessions && !hasAnySessions) ? (
                 <div className="flex items-center justify-center gap-1.5 py-1">
                   <XCircle className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">Not Recorded</span>
+                  <span className="text-xs text-gray-500">
+                    {ATTENDANCE_STATUS.NOT_RECORDED}
+                  </span>
                 </div>
               ) : sessions && sessions.length > 0 ? (
-                <div className="divide-y divide-gray-200">
-                  {sessions
-                    .filter((s) => s.hasRecord)
-                    .map((session) => (
-                      <div
-                        key={session.key}
-                        className="flex items-center justify-between py-1.5 first:pt-1 last:pb-1"
-                      >
-                        <span className="truncate pr-2 text-xs font-medium text-gray-600">
-                          {session.label}
-                          {session.timeRange && (
-                            <span className="ml-1 text-[10px] font-normal text-gray-400">
-                              {session.timeRange}
-                            </span>
-                          )}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className={`flex-shrink-0 border-0 text-[11px] font-semibold ${
-                            session.attended
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {session.attended ? (
-                            <>
-                              <CheckCircle2 className="mr-1 h-3 w-3" />
-                              Present
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="mr-1 h-3 w-3" />
-                              Absent
-                            </>
-                          )}
-                        </Badge>
-                      </div>
-                    ))}
-                </div>
+                <SessionStatusList
+                  sessions={sessions}
+                  variant="past"
+                  filterRecorded
+                />
               ) : (
                 <div className="flex justify-center py-1">
                   <AttendancePill attended={hasAnyAttendance} />
@@ -332,14 +283,35 @@ export const EventCard: React.FC<EventCardProps> = ({ event, studentId }) => {
                       </DialogDescription>
                     </DialogHeader>
 
-                    {/* 🚧 QR + Ticket check commented out for staging — replaced with Coming Soon */}
-                    {/* {!canViewQr ? <TicketRequiredSection /> : ( */}
-                    {/*   <> */}
-                    {/*     <QRCodeDisplay value={qrValue} size={160} /> */}
-                    {/*     ... attendance status ... */}
-                    {/*   </> */}
-                    {/* )} */}
-                    <QRSection />
+                    {canShowQR ? (
+                      <>
+                        <QRCodeDisplay value={qrValue} size={160} />
+
+                        {/* Per-session attendance status */}
+                        {sessions && sessions.length > 0 && (
+                          <div className="w-full space-y-2">
+                            <p className="text-center text-[11px] font-semibold tracking-widest text-gray-400 uppercase">
+                              Attendance Status
+                            </p>
+                            <SessionStatusList
+                              sessions={sessions}
+                              variant="upcoming"
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 px-4 py-6 text-center">
+                        <Ticket className="h-10 w-10 text-gray-400" />
+                        <p className="text-sm font-semibold text-gray-700">
+                          Ticket Required
+                        </p>
+                        <p className="max-w-[220px] text-xs text-gray-400">
+                          You need to be registered as an attendee to view your
+                          attendance QR code.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </DialogContent>

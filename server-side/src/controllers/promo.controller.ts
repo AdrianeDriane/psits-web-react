@@ -3,7 +3,7 @@ import mongoose, { Types } from "mongoose";
 import { Promo } from "../models/promo.model";
 import { PromoLog } from "../models/promo.log.model";
 
-import { promoCodeGenerator } from "../custom_function/promo_code_generator";
+import { promoCodeGenerator } from "../custom_function/code_generator";
 
 export const createPromoCode = async (req: Request, res: Response) => {
   const {

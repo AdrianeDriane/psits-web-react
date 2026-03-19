@@ -1,18 +1,40 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { X, Camera, AlertCircle } from 'lucide-react';
+import React, { useState } from "react";
+import { X, AlertCircle } from "lucide-react";
+import { Scanner } from "@yudiel/react-qr-scanner";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { QRCodePayloadV2 } from "@/features/events/types/event.types";
 
 interface ScanQRModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onScanSuccess: (studentId: string) => void;
+  onScanSuccess: (payload: QRCodePayloadV2) => void;
+}
+
+function parseQRPayload(raw: string): QRCodePayloadV2 | null {
+  try {
+    const parsed = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      parsed.v === 2 &&
+      typeof parsed.eventId === "string" &&
+      typeof parsed.studentId === "string" &&
+      typeof parsed.name === "string" &&
+      typeof parsed.campus === "string"
+    ) {
+      return parsed as QRCodePayloadV2;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export const ScanQRModal: React.FC<ScanQRModalProps> = ({
@@ -20,83 +42,51 @@ export const ScanQRModal: React.FC<ScanQRModalProps> = ({
   onOpenChange,
   onScanSuccess,
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [error, setError] = useState('');
-  const [isScanning, setIsScanning] = useState(false);
-
-  const startCamera = async () => {
-    try {
-      setError('');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setIsScanning(true);
-      }
-    } catch (err) {
-      setError('Unable to access camera. Please check your permissions.');
-      console.error('Camera error:', err);
-    }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsScanning(false);
-  };
+  const [error, setError] = useState("");
 
   const handleClose = () => {
-    stopCamera();
+    setError("");
     onOpenChange(false);
   };
 
-  // Simulate QR code scanning (replace with actual QR scanner library like jsQR)
-  const handleManualCapture = () => {
-    // This is a placeholder - integrate with a QR code scanning library
-    const mockStudentId = '23785371';
-    onScanSuccess(mockStudentId);
-    handleClose();
-  };
+  const handleScan = (detectedCodes: Array<{ rawValue: string }>) => {
+    if (detectedCodes.length === 0) return;
 
-  useEffect(() => {
-    if (open) {
-      startCamera();
+    const scannedValue = detectedCodes[0].rawValue;
+    const payload = parseQRPayload(scannedValue);
+
+    if (payload) {
+      setError("");
+      onScanSuccess(payload);
+      handleClose();
     } else {
-      stopCamera();
+      setError("Invalid QR Code. Please scan a valid attendance QR code.");
     }
-
-    return () => {
-      stopCamera();
-    };
-  }, [open]);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-full max-w-lg sm:max-w-xs p-0 gap-0 rounded-lg sm:rounded-xl" showCloseButton={false}>
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent
+        className="w-full max-w-lg gap-0 rounded-lg p-0 sm:max-w-xs sm:rounded-xl"
+        showCloseButton={false}
+      >
+        <DialogHeader className="border-b px-6 py-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold leading-6">Scan QR Code</DialogTitle>
+            <DialogTitle className="text-xl leading-6 font-semibold">
+              Scan QR Code
+            </DialogTitle>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={handleClose}
-              className="h-8 w-8 flex items-center justify-center rounded-full cursor-pointer"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="px-6 py-6 space-y-4">
+        <div className="space-y-4 px-6 py-6">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -104,61 +94,53 @@ export const ScanQRModal: React.FC<ScanQRModalProps> = ({
             </Alert>
           )}
 
-          {/* Camera View */}
-          <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            
+          {/* QR Scanner */}
+          <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
+            {open && (
+              <Scanner
+                onScan={handleScan}
+                onError={(err) => {
+                  console.error("QR Scan Error:", err);
+                  setError(
+                    "Unable to access camera. Please check your permissions."
+                  );
+                }}
+                constraints={{ facingMode: "environment" }}
+                allowMultiple={false}
+                scanDelay={500}
+              />
+            )}
+
             {/* Scanning Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-64 h-64">
-                {/* Corner brackets */}
-                <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-[#1C9DDE] rounded-tl-lg" />
-                <div className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-[#1C9DDE] rounded-tr-lg" />
-                <div className="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-[#1C9DDE] rounded-bl-lg" />
-                <div className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-[#1C9DDE] rounded-br-lg" />
-                
-                {/* Scanning line animation */}
-                {isScanning && (
-                  <div className="absolute left-0 right-0 h-0.5 bg-[#1C9DDE] animate-pulse" />
-                )}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="relative h-64 w-64">
+                <div className="absolute top-0 left-0 h-16 w-16 rounded-tl-lg border-t-4 border-l-4 border-[#1C9DDE]" />
+                <div className="absolute top-0 right-0 h-16 w-16 rounded-tr-lg border-t-4 border-r-4 border-[#1C9DDE]" />
+                <div className="absolute bottom-0 left-0 h-16 w-16 rounded-bl-lg border-b-4 border-l-4 border-[#1C9DDE]" />
+                <div className="absolute right-0 bottom-0 h-16 w-16 rounded-br-lg border-r-4 border-b-4 border-[#1C9DDE]" />
               </div>
             </div>
 
             {/* Instructions */}
             {!error && (
-              <div className="absolute bottom-4 left-0 right-0 text-center">
-                <p className="text-white text-sm font-medium bg-black/50 px-4 py-2 rounded-full inline-block">
+              <div className="pointer-events-none absolute right-0 bottom-4 left-0 text-center">
+                <p className="inline-block rounded-full bg-black/50 px-4 py-2 text-sm font-medium text-white">
                   Position QR code within the frame
                 </p>
               </div>
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1 cursor-pointer"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleManualCapture}
-              className="flex-1 bg-[#1C9DDE] hover:bg-[#1C9DDE] cursor-pointer"
-              disabled={!!error}
-            >
-              <Camera className="h-4 w-4 mr-2" />
-              Capture
-            </Button>
-          </div>
+          {/* Cancel Button */}
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            className="w-full cursor-pointer"
+          >
+            Cancel
+          </Button>
 
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-muted-foreground text-center text-xs">
             Make sure the QR code is clear and well-lit for best results
           </p>
         </div>

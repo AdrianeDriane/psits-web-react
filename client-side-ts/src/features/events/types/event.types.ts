@@ -154,6 +154,72 @@ export interface RaffleResponse {
   message: string;
 }
 
+// ── Statistics V2 Types ──────────────────────────────────────────────────
+
+export interface YearLevelCounts {
+  "1st": number;
+  "2nd": number;
+  "3rd": number;
+  "4th": number;
+}
+
+export interface StatisticsSummary {
+  totalRegistrations: number;
+  totalRevenue: number;
+  totalAttended: number;
+  attendanceRate: number;
+}
+
+export interface DistributionData {
+  registered: Record<string, number>;
+  attended: Record<string, number>;
+}
+
+export interface YearLevelDistributionData {
+  registered: YearLevelCounts;
+  attended: YearLevelCounts;
+}
+
+export interface SessionAttendanceData {
+  morning: number;
+  afternoon: number;
+  evening: number;
+}
+
+export interface CampusBreakdownEntry {
+  campus: string;
+  registrations: number;
+  attended: number;
+  revenue: number;
+  unitsSold: number;
+  yearLevelDistribution: YearLevelCounts;
+}
+
+export interface RegistrationTimelineEntry {
+  date: string;
+  count: number;
+  cumulativeCount: number;
+}
+
+export interface EventStatisticsData {
+  summary: StatisticsSummary;
+  yearLevelDistribution: YearLevelDistributionData;
+  courseDistribution: DistributionData;
+  campusDistribution: DistributionData;
+  sessionAttendance: SessionAttendanceData;
+  campusBreakdown: CampusBreakdownEntry[];
+  registrationTimeline: RegistrationTimelineEntry[];
+}
+
+export interface EventStatisticsResponse {
+  data: EventStatisticsData;
+  access: {
+    isUcMainAdmin: boolean;
+    campusScope: string;
+  };
+}
+
+/** @deprecated Use EventStatisticsData instead */
 export interface StatisticsData {
   totalAttendees: number;
   presentCount: number;
@@ -235,4 +301,98 @@ export interface RaffleWinnerResponse {
 export interface RemoveRaffleResponse {
   message: string;
   [key: string]: unknown;
+}
+
+// ─── Attendance V2 Types ─────────────────────────────────────────────────────
+
+export interface MarkAttendanceV2Payload {
+  campus: string;
+  attendeeName: string;
+  course: string;
+  year: number;
+}
+
+export interface MarkAttendanceV2Response {
+  message: string;
+  session: string;
+  data: {
+    id_number: string;
+    name: string;
+    campus: string;
+    attendance: Attendee["attendance"];
+  };
+  isNewAttendee: boolean;
+}
+
+/** Parsed QR code payload (JSON format v2) */
+export interface QRCodePayloadV2 {
+  v: number;
+  eventId: string;
+  studentId: string;
+  name: string;
+  campus: string;
+  course: string;
+  year: number;
+}
+
+// ─── Edit Attendee V2 Types ─────────────────────────────────────────────────
+
+export interface EditableAttendeeData {
+  id_number: string;
+  baseIdNumber: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  email: string;
+  course: string;
+  year: number;
+  campus: string;
+  shirtSize: string;
+  shirtPrice: number;
+}
+
+export interface EditableAttendeeResponse {
+  data: EditableAttendeeData;
+}
+
+export interface EditAttendeeV2Payload {
+  adminPassword: string;
+  confirmationPhrase: string;
+  changes: {
+    studentId?: string;
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    email?: string;
+    course?: string;
+    yearLevel?: string;
+    shirtSize?: string;
+    shirtPrice?: number;
+  };
+}
+
+export interface EditAttendeeV2Response {
+  message: string;
+  data: {
+    attendee: {
+      id_number: string;
+      name: string;
+      campus: string;
+      course: string;
+      year: number;
+      shirtSize: string;
+      shirtPrice: number;
+    };
+  };
+}
+
+// ─── Change Attendee Password V2 Types ──────────────────────────────────────
+
+export interface ChangeAttendeePasswordV2Payload {
+  adminPassword: string;
+  newPassword: string;
+}
+
+export interface ChangeAttendeePasswordV2Response {
+  message: string;
 }
