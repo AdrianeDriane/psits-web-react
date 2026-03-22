@@ -45,4 +45,5 @@ export const attendeeSchema = new Schema<IAttendeeDocument>({
   raffleIsWinner: { type: Boolean, default: false },
   transactBy: { type: String },
   transactDate: { type: Date },
+  editedBy: { type: [String], default: [] },
 });

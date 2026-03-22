@@ -65,6 +65,7 @@ export interface EventData {
 export interface Attendee {
   id_number: string;
   name: string;
+  email?: string;
   campus: string;
   course: string;
   year: number;
@@ -121,6 +122,7 @@ export interface GetAttendeesParams {
   course?: string[];
   yearLevel?: number[];
   registeredOn?: string;
+  exportAll?: boolean;
 }
 
 export interface AttendeesPagination {
@@ -331,4 +333,66 @@ export interface QRCodePayloadV2 {
   campus: string;
   course: string;
   year: number;
+}
+
+// ─── Edit Attendee V2 Types ─────────────────────────────────────────────────
+
+export interface EditableAttendeeData {
+  id_number: string;
+  baseIdNumber: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  email: string;
+  course: string;
+  year: number;
+  campus: string;
+  shirtSize: string;
+  shirtPrice: number;
+}
+
+export interface EditableAttendeeResponse {
+  data: EditableAttendeeData;
+}
+
+export interface EditAttendeeV2Payload {
+  adminPassword: string;
+  confirmationPhrase: string;
+  changes: {
+    studentId?: string;
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    email?: string;
+    course?: string;
+    yearLevel?: string;
+    shirtSize?: string;
+    shirtPrice?: number;
+  };
+}
+
+export interface EditAttendeeV2Response {
+  message: string;
+  data: {
+    attendee: {
+      id_number: string;
+      name: string;
+      campus: string;
+      course: string;
+      year: number;
+      shirtSize: string;
+      shirtPrice: number;
+    };
+  };
+}
+
+// ─── Change Attendee Password V2 Types ──────────────────────────────────────
+
+export interface ChangeAttendeePasswordV2Payload {
+  adminPassword: string;
+  newPassword: string;
+}
+
+export interface ChangeAttendeePasswordV2Response {
+  message: string;
 }

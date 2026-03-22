@@ -22,4 +22,5 @@ export interface IAttendee {
   raffleIsWinner: boolean;
   transactBy: string;
   transactDate: Date | null;
+  editedBy?: string[];
 }

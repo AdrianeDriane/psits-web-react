@@ -24,10 +24,10 @@ export const SessionAttendanceChart: React.FC<SessionAttendanceChartProps> = ({
     { session: "Evening", label: "Evening", count: data.evening },
   ];
 
-  const totalAttendees = chartData.reduce(
-    (total, entry) => total + entry.count,
-    0
-  );
+  // const totalAttendees = chartData.reduce(
+  //   (total, entry) => total + entry.count,
+  //   0
+  // );
   const hasData = chartData.some((d) => d.count > 0);
 
   return (
@@ -46,14 +46,14 @@ export const SessionAttendanceChart: React.FC<SessionAttendanceChartProps> = ({
       <CardContent className="pt-0">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(180px,1.1fr)]">
           <div className="space-y-4">
-            <div>
+            {/* <div>
               <p className="text-4xl leading-none font-semibold text-slate-800">
                 {totalAttendees.toLocaleString()}
               </p>
               <p className="text-muted-foreground text-sm">
                 Total Student Attendees
               </p>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               {chartData.map((entry) => (
