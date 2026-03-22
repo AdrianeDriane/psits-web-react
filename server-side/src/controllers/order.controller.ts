@@ -42,7 +42,9 @@ export const getSpecificOrdersController = async (
 
 export const getAllOrdersController = async (req: Request, res: Response) => {
   try {
-    const orders: IOrders[] = await Orders.find({order_status:  { $ne: "Refunded" }}).sort({ order_date: -1 });
+    const orders: IOrders[] = await Orders.find({
+      order_status: { $ne: "Refunded" },
+    }).sort({ order_date: -1 });
     if (orders.length > 0) {
       res.status(200).json(orders);
     } else {
@@ -198,9 +200,7 @@ export const studentAndAdminOrderController = async (
         itemSubtotal = itemSubtotal - itemSubtotal * 0.05; // 5%
         finalMembershipDiscount = true;
       }
-      
 
-      
       orderTotal += itemSubtotal;
       if (promo_discount) {
         promo = await Promo.findOne({ promo_name });
@@ -266,8 +266,6 @@ export const studentAndAdminOrderController = async (
       order_status: "Pending",
       role: both.role,
     };
-
-   
 
     const newOrder = new Orders(finalOrder);
     await newOrder.save({ session });
@@ -343,7 +341,7 @@ export const cancelOrderController = async (req: Request, res: Response) => {
 
   try {
     const order = await Orders.findById(productId).session(session);
-  
+
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -586,8 +584,7 @@ export const approveOrderController = async (req: Request, res: Response) => {
                         course: successfulOrder.course,
                         year: successfulOrder.year,
                         campus: student.campus,
-                        transactBy:
-                          successfulOrder.admin || admin || "System",
+                        transactBy: successfulOrder.admin || admin || "System",
                         transactDate: successfulOrder.transaction_date
                           ? new Date(successfulOrder.transaction_date)
                           : new Date(),
@@ -728,8 +725,6 @@ export const getAllPendingCountController = async (
   }
 };
 
-
-
 export const refund = async (req: Request, res: Response) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -744,89 +739,83 @@ export const refund = async (req: Request, res: Response) => {
   const orderId = new Types.ObjectId(order_id);
 
   try {
-
     const order = await Orders.findById(orderId).session(session);
 
     if (!order || order.order_status !== "Paid") {
       throw new Error("Order must exist and be paid before refund.");
     }
 
-  
     await Orders.updateOne(
       { _id: orderId },
       { $set: { order_status: "Refunded" } },
       { session }
     );
 
-    
     for (const item of order.items) {
-
       const merchId = new Types.ObjectId(item.product_id);
-      const merch  = await Merch.findOne({ _id: merchId });
+      const merch = await Merch.findOne({ _id: merchId });
       const result = await Merch.findOneAndUpdate(
         { _id: merchId },
         { $pull: { order_details: { reference_code: order.reference_code } } },
         { new: true, session }
       );
-      
-   
+
       if (!result) {
         throw new Error(`Failed to update merchandise ${merchId}`);
       }
-        await new Refund({
-      refund_id: refundCodeGenerator(),
-      order_id: orderId,
-      order_reference: order.reference_code,
-          product_id: merchId,
-          product_name: merch?.name,
-          refund_price: item.sub_total,
-          refund_admin: req.admin.name,
-            refund_admin_id:req.admin.id_number,
-          refund_date: new Date(),
-
-    }).save();
+      await new Refund({
+        refund_id: refundCodeGenerator(),
+        order_id: orderId,
+        order_reference: order.reference_code,
+        product_id: merchId,
+        product_name: merch?.name,
+        refund_price: item.sub_total,
+        refund_admin: req.admin.name,
+        refund_admin_id: req.admin.id_number,
+        refund_date: new Date(),
+      }).save();
     }
-  
 
     await session.commitTransaction();
     session.endSession();
 
     return res.status(200).json({
-      message: "Refund processed successfully"
+      message: "Refund processed successfully",
     });
-
   } catch (error) {
-
     await session.abortTransaction();
     session.endSession();
 
     console.error("Error refund orders:", error);
 
     return res.status(500).json({
-      error: "Refund process failed"
+      error: "Refund process failed",
     });
   }
 };
 
 export const getAllRefund = async (req: Request, res: Response) => {
   try {
-
     const refunds = await Refund.aggregate([
-
-      // Join Orders collection
       {
         $lookup: {
           from: "orders",
           localField: "order_id",
           foreignField: "_id",
-          as: "order"
-        }
+          as: "order",
+        },
+      },
+      {
+        $lookup: {
+          from: "merches",
+          localField: "product_id",
+          foreignField: "_id",
+          as: "merch",
+        },
       },
 
-    
-      {
-        $unwind: "$order"
-      },
+      { $unwind: "$order" },
+      { $unwind: { path: "$merch", preserveNullAndEmptyArrays: true } },
 
       {
         $project: {
@@ -836,50 +825,52 @@ export const getAllRefund = async (req: Request, res: Response) => {
           refund_date: 1,
           order_reference: 1,
 
+          imageUrl: "$merch.imageUrl",
+
           order_details: {
             student_name: "$order.student_name",
             course: "$order.course",
             year: "$order.year",
             id_number: "$order.id_number",
-            admin_name: "$refund_admin"
-          }
-        }
+            admin_name: "$refund_admin",
+          },
+        },
       },
 
       {
         $group: {
           _id: "$product_id",
           product_name: { $first: "$product_name" },
+          imageUrl: { $first: "$imageUrl" }, // 👈 correct way
           total_refunds: { $sum: 1 },
           total_refund_amount: { $sum: "$refund_price" },
-          refunds: { $push: "$$ROOT" }
-        }
+          refunds: { $push: "$$ROOT" },
+        },
       },
 
-    
       {
         $project: {
           _id: 0,
           product_id: "$_id",
           product_name: 1,
+          imageUrl: 1,
           total_refunds: 1,
-          refunds: 1
-        }
-      }
-
-    ]);
+          total_refund_amount: 1,
+          refunds: 1,
+        },
+      },
+    ]).sort({ product_name: 1 });
 
     if (refunds.length > 0) {
       return res.status(200).json({ data: refunds });
     }
 
     return res.status(404).json({ message: "No refunds found" });
-
   } catch (error) {
     console.error("Error fetching refunds:", error);
 
     return res.status(500).json({
-      message: "Internal Server Error"
+      message: "Internal Server Error",
     });
   }
 };
