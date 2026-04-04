@@ -1,7 +1,6 @@
 import {
   drawRaffleWinner,
   getEligibleRaffleAttendeesV2,
-  resetRaffleWinners,
   undoRaffleWinner,
 } from "@/features/events/api/eventService";
 import type {
@@ -352,7 +351,6 @@ export default function RaffleDraw({
       return;
     setIsSpinning(true);
     try {
-      await resetRaffleWinners(normalizedEventId);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setWinners([]);
       setRound(1);
