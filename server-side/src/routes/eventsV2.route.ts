@@ -7,15 +7,19 @@ import {
 
 import {
   addAttendeeV2Controller,
+  changeAttendeePasswordV2Controller,
+  drawEventRaffleWinnerController,
+  editAttendeeV2Controller,
   getAllEventsV2Controller,
+  getEditableAttendeeV2Controller,
+  getEligibleAttendeesRaffleV2Controller,
   getEventAttendeesV2Controller,
   getEventByIdV2Controller,
   getEventStatisticsV2Controller,
   getMyEventsController,
   markAttendanceV2Controller,
-  getEditableAttendeeV2Controller,
-  editAttendeeV2Controller,
-  changeAttendeePasswordV2Controller,
+  resetEventReffleWinnersController,
+  undoEventRaffleWinnerController,
 } from "../controllers/eventV2.controller";
 
 const router = Router();
@@ -100,5 +104,37 @@ router.put(
   roleAuthenticateV2(["Admin"]),
   changeAttendeePasswordV2Controller
 );
+
+// GET eligible raffle participants
+router.get(
+  "/raffle/:eventId/",
+  requireAccessTokenV2,
+  roleAuthenticateV2(["Admin"]),
+  getEligibleAttendeesRaffleV2Controller
+);
+
+// POST draw raffle winner
+router.post(
+  "/raffle/:eventId/draw",
+  requireAccessTokenWithDBCheck,
+  roleAuthenticateV2(["Admin"]),
+  drawEventRaffleWinnerController
+);
+
+// POST undo raffle winner
+router.post(
+  "/raffle/:eventId/undo/:attendeeId",
+  requireAccessTokenWithDBCheck,
+  roleAuthenticateV2(["Admin"]),
+  undoEventRaffleWinnerController
+);
+
+// // POST reset winner list
+// router.post(
+//   "/raffle/:eventId/reset",
+//   requireAccessTokenWithDBCheck,
+//   roleAuthenticateV2(["Admin"]),
+//   resetEventReffleWinnersController
+// );
 
 export default router;
