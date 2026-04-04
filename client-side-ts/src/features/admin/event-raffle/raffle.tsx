@@ -18,66 +18,76 @@ import {
   WinnersModal,
 } from "./components";
 
+// ─── Layout ───────────────────────────────────────────────────────────────────
 const ITEM_HEIGHT = 96;
 const VISIBLE = 5;
-const WINNER_IDX = 80;
-// const SPIN_DURATION = 6000;
+const CENTER_SLOT = Math.floor(VISIBLE / 2);
 
-const FREE_SPIN_SPEED = 0.12;
-const FINALE_DURATION = 2800;
-const FREE_SPIN_LOOP_SIZE = ITEM_HEIGHT * 30;
+// ─── Animation tuning ────────────────────────────────────────────────────────
+const CRUISE_SPEED = 1.5; // px/ms — exciting but readable, safe for photosensitivity
+const MIN_SPIN_TIME = 500; // ms — minimum cruise before braking is allowed
+const BRAKE_ITEMS = 50; // slots of runway before the winner slot
+const WINNER_IDX = 80; // winner is always injected this many slots deep
+const BRAKE_DURATION = 5500; // ms — easing duration; longer = smoother stop
 
-type Winner = { name: string; round: number; timestamp: string };
-
-type PendingWinner = DrawRaffleWinnerResponse["winner"] | null;
-
-function getUniqueRandomItems(pool: string[], count: number): string[] {
-  const result: string[] = [];
-  const poolCopy = [...pool];
-  const max = Math.min(count, poolCopy.length);
-
-  for (let i = 0; i < max; i++) {
-    const randomIndex = Math.floor(Math.random() * poolCopy.length);
-    result.push(poolCopy[randomIndex]);
-    poolCopy[randomIndex] = poolCopy[poolCopy.length - 1];
-    poolCopy.pop();
-  }
-  return result;
+/** easeOutCubic: fast start, guaranteed stop at t=1 with zero velocity. */
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
 }
 
-function generateReelChunk(pool: string[], length: number): string[] {
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Winner = { name: string; round: number; timestamp: string };
+type PendingWinner = DrawRaffleWinnerResponse["winner"] | null;
+
+// ─── Reel generation ──────────────────────────────────────────────────────────
+
+/** Unbiased Fisher-Yates shuffle — non-mutating. */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Tile the pool in full shuffled passes until we have `length` items.
+ * Every name appears once per pass before any name repeats — visually fair.
+ * A seam guard prevents the same name appearing back-to-back between passes.
+ */
+function buildReelPool(pool: string[], length: number): string[] {
   if (pool.length === 0) return Array(length).fill("No Participants");
+  if (pool.length === 1) return Array(length).fill(pool[0]);
 
   const reel: string[] = [];
   while (reel.length < length) {
-    const needed = length - reel.length;
-    const batch = getUniqueRandomItems(pool, needed);
-
+    const pass = shuffle(pool);
     if (
       reel.length > 0 &&
-      batch[0] === reel[reel.length - 1] &&
-      batch.length > 1
+      pass[0] === reel[reel.length - 1] &&
+      pass.length > 1
     ) {
-      const temp = batch[0];
-      batch[0] = batch[1];
-      batch[1] = temp;
+      [pass[0], pass[1]] = [pass[1], pass[0]];
     }
-
-    reel.push(...batch);
+    reel.push(...pass.slice(0, length - reel.length));
   }
   return reel;
 }
 
+/** Build the full reel with the winner injected at WINNER_IDX. */
 function buildReel(pool: string[], winner: string): string[] {
-  const reel = generateReelChunk(pool, 120);
+  const reel = buildReelPool(pool, Math.max(160, WINNER_IDX + VISIBLE + 20));
   reel[WINNER_IDX] = winner;
   return reel;
 }
 
-function easeOut(t: number) {
-  return 1 - Math.pow(1 - t, 5);
+/** Pixel offset at which WINNER_IDX is perfectly centered in the viewport. */
+function winnerOffset(): number {
+  return -((WINNER_IDX - CENTER_SLOT) * ITEM_HEIGHT);
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function RaffleDraw({
   eventName,
   eventDate,
@@ -87,6 +97,7 @@ export default function RaffleDraw({
 }) {
   const { eventId } = useParams<{ eventId: string }>();
   const normalizedEventId = eventId?.trim() ?? "";
+
   const [allParticipants, setAllParticipants] = useState<RaffleAttendeeDto[]>(
     []
   );
@@ -100,9 +111,9 @@ export default function RaffleDraw({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [round, setRound] = useState(1);
-  const [reelItems, setReelItems] = useState<string[]>(() => {
-    return generateReelChunk([], VISIBLE + 2);
-  });
+  const [reelItems, setReelItems] = useState<string[]>(() =>
+    buildReelPool([], VISIBLE + 2)
+  );
   const [isRedrawing, setIsRedrawing] = useState(false);
   const [reelOffset, setReelOffset] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -114,61 +125,55 @@ export default function RaffleDraw({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const startTimeRef = useRef(0);
-  const targetOffRef = useRef(0);
   const fetchedWinnerRef = useRef<PendingWinner>(null);
 
+  // ─── Load participants ───────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
-
     const loadPool = async () => {
       if (!normalizedEventId) {
         setIsLoadingParticipants(false);
         return;
       }
-
       setIsLoadingParticipants(true);
       setLoadError(null);
-
       try {
         const pool = await getEligibleRaffleAttendeesV2(normalizedEventId, {
           campus: selectedCampus,
         });
         if (cancelled) return;
         setAllParticipants(pool.eligible);
-
-        if (pool.winners && pool.winners.length > 0) {
-          const historicalWinners = pool.winners.map((w, index) => ({
+        if (pool.winners?.length) {
+          const historical = pool.winners.map((w, i) => ({
             name: w.name,
-            round: index + 1,
+            round: i + 1,
             timestamp: "Previously Drawn",
           }));
-          setWinners(historicalWinners);
-          setRound(historicalWinners.length + 1);
+          setWinners(historical);
+          setRound(historical.length + 1);
         }
         setTotalParticipants(
           (pool.eligible?.length ?? 0) + (pool.winners?.length ?? 0)
         );
-        const names = pool.eligible.map((a) => a.name).filter(Boolean);
-        setReelItems(generateReelChunk(names, VISIBLE + 2));
+        setReelItems(
+          buildReelPool(
+            pool.eligible.map((a) => a.name).filter(Boolean),
+            VISIBLE + 2
+          )
+        );
       } catch {
-        if (!cancelled) {
-          setLoadError("Failed to load raffle pool.");
-        }
+        if (!cancelled) setLoadError("Failed to load raffle pool.");
       } finally {
-        if (!cancelled) {
-          setIsLoadingParticipants(false);
-        }
+        if (!cancelled) setIsLoadingParticipants(false);
       }
     };
-
     void loadPool();
-
     return () => {
       cancelled = true;
     };
   }, [normalizedEventId, selectedCampus]);
 
+  // ─── Fullscreen ──────────────────────────────────────────────────────────────
   const toggleFullscreen = useCallback(async () => {
     if (!document.fullscreenElement)
       await containerRef.current?.requestFullscreen();
@@ -181,7 +186,7 @@ export default function RaffleDraw({
     return () => document.removeEventListener("fullscreenchange", h);
   }, []);
 
-  // Decoupled Draw function (Instant UI reaction + background API)
+  // ─── Core draw ───────────────────────────────────────────────────────────────
   const drawWinner = useCallback(() => {
     if (isSpinning || allParticipants.length === 0) return;
 
@@ -190,99 +195,110 @@ export default function RaffleDraw({
     setShowConfetti(false);
     fetchedWinnerRef.current = null;
 
-    // --- PHASE 1: THE INFINITE TREADMILL ---
     const participantNames = allParticipants.map((a) => a.name).filter(Boolean);
-    setReelItems(generateReelChunk(participantNames, 150)); // Generate a massive chunk
+
+    // Build a large initial reel for the cruise phase.
+    const initialReel = buildReelPool(participantNames, 400);
+    setReelItems(initialReel);
     setIsAnimating(true);
 
-    let isFetching = true;
-    let treadmillStartTime = performance.now();
-    const FAST_SPIN_SPEED = 3.5; // Fast enough to blur, slow enough not to strobe
+    // ── Animation state ────────────────────────────────────────────────────────
+    let phase: "cruise" | "brake" = "cruise";
+    let offset = 0;
+    let prevTime: number | null = null;
 
-    const infiniteTick = (now: number) => {
-      let elapsed = now - treadmillStartTime;
-      let off = -(elapsed * FAST_SPIN_SPEED);
+    // Set when braking begins:
+    let brakeStartOffset = 0;
+    let brakeStartTime = 0;
+    let targetOffset = 0;
 
-      // Seamless Loop: If we scroll past 50 items, silently snap the clock back to 0.
-      // Because it's spinning so fast, the human eye cannot see the reset!
-      if (off <= -(ITEM_HEIGHT * 50)) {
-        treadmillStartTime = now;
-        off = 0;
-      }
+    // ── RAF loop ───────────────────────────────────────────────────────────────
+    const tick = (now: number) => {
+      const dt = prevTime === null ? 0 : Math.min(now - prevTime, 64);
+      prevTime = now;
 
-      setReelOffset(off);
+      if (phase === "cruise") {
+        // Steady cruise — simple linear advance each frame.
+        offset -= CRUISE_SPEED * dt;
+        setReelOffset(offset);
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        // ── Brake phase: time-based easing, no accumulated drift ──────────────
+        const elapsed = now - brakeStartTime;
+        const t = Math.min(elapsed / BRAKE_DURATION, 1.0);
+        const eased = easeOutCubic(t);
 
-      if (isFetching) {
-        rafRef.current = requestAnimationFrame(infiniteTick);
+        // Position is always derived from the start offset — never accumulated.
+        // At t=1, eased=1 exactly, so we land precisely on targetOffset.
+        const currentOffset =
+          brakeStartOffset + (targetOffset - brakeStartOffset) * eased;
+        setReelOffset(currentOffset);
+
+        if (t < 1.0) {
+          rafRef.current = requestAnimationFrame(tick);
+        } else {
+          // Animation complete — snap to exact pixel, no drift.
+          setReelOffset(targetOffset);
+          setIsAnimating(false);
+          setIsSpinning(false);
+          setWinnerLit(true);
+
+          if (fetchedWinnerRef.current) {
+            setShowConfetti(true);
+            setPendingWinner(fetchedWinnerRef.current);
+            setTimeout(() => setShowConfetti(false), 4500);
+          }
+        }
       }
     };
 
-    // Start the infinite spin instantly
-    rafRef.current = requestAnimationFrame(infiniteTick);
+    rafRef.current = requestAnimationFrame(tick);
 
-    // --- PHASE 2: THE API CALL & BRAKES ---
-    drawRaffleWinner(normalizedEventId)
-      .then((response) => {
-        fetchedWinnerRef.current = response.winner;
+    // ── startBraking: called once when API + MIN_SPIN_TIME both resolve ────────
+    const startBraking = (winnerName: string, now: number) => {
+      // 1. Find which slot we're currently at.
+      const currentIndex = Math.ceil(Math.abs(offset) / ITEM_HEIGHT);
 
-        // 1. Turn off the treadmill
-        isFetching = false;
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // 2. Place the winner BRAKE_ITEMS slots ahead — guaranteed runway.
+      const winnerIndex = currentIndex + BRAKE_ITEMS;
 
-        // 2. Rebuild the final reel with the winner exactly at WINNER_IDX
-        setReelItems(buildReel(participantNames, response.winner.name));
+      // 3. Extend the reel if needed and inject the winner name.
+      setReelItems((prev) => {
+        const next = [...prev];
+        while (next.length <= winnerIndex + VISIBLE + 5) {
+          next.push(...buildReelPool(participantNames, 100));
+        }
+        next[winnerIndex] = winnerName;
+        return next;
+      });
 
-        // 3. Set up the Brake math
-        const center = Math.floor(VISIBLE / 2);
-        const finalOff = -((WINNER_IDX - center) * ITEM_HEIGHT);
-        const brakeStartTime = performance.now();
+      // 4. Capture the exact start state for the easing calculation.
+      brakeStartOffset = offset;
+      brakeStartTime = now;
+      targetOffset = -((winnerIndex - CENTER_SLOT) * ITEM_HEIGHT);
 
-        // We snap the offset to 0 so the easeOut curve has a full runway to stop smoothly
-        // setReelOffset(0);
+      // 5. Flip phase — next RAF tick uses the easing formula.
+      phase = "brake";
+    };
 
-        const brakingTick = (now: number) => {
-          const t = Math.min((now - brakeStartTime) / FINALE_DURATION, 1);
-          const off = finalOff * easeOut(t);
-          setReelOffset(off);
+    // ── API & timer sync ───────────────────────────────────────────────────────
+    const minSpinPromise = new Promise<number>((resolve) =>
+      setTimeout(() => resolve(performance.now()), MIN_SPIN_TIME)
+    );
+    const apiPromise = drawRaffleWinner(normalizedEventId);
 
-          if (t < 1) {
-            rafRef.current = requestAnimationFrame(brakingTick);
-          } else {
-            // Animation finished!
-            setReelOffset(finalOff);
-            setIsAnimating(false);
-            setIsSpinning(false);
-            setWinnerLit(true);
-
-            if (fetchedWinnerRef.current) {
-              setShowConfetti(true);
-              setPendingWinner(fetchedWinnerRef.current);
-              setTimeout(() => setShowConfetti(false), 4500);
-            }
-          }
-        };
-
-        // Start braking
-        rafRef.current = requestAnimationFrame(brakingTick);
+    Promise.all([apiPromise, minSpinPromise])
+      .then(([apiResponse, resolvedAt]) => {
+        fetchedWinnerRef.current = apiResponse.winner;
+        startBraking(apiResponse.winner.name, resolvedAt);
       })
       .catch((error) => {
         console.error("Failed to draw from server:", error);
-        isFetching = false;
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
-        // Land on an error slot if the network totally fails
-        setReelItems((prev) => {
-          const updated = [...prev];
-          updated[WINNER_IDX] = "Draw Error";
-          return updated;
-        });
-
-        setIsAnimating(false);
-        setIsSpinning(false);
-        alert("Network Error: Could not draw winner. Please try again.");
+        startBraking("Draw Error", performance.now());
       });
   }, [isSpinning, normalizedEventId, allParticipants]);
 
+  // ─── Winner actions ───────────────────────────────────────────────────────────
   const handleConfirmWinner = () => {
     if (!pendingWinner) return;
     setWinners((prev) => [
@@ -303,19 +319,15 @@ export default function RaffleDraw({
 
   const handleRedraw = async () => {
     if (!pendingWinner || isRedrawing) return;
-
     setIsSpinning(true);
     setIsRedrawing(true);
     try {
       await undoRaffleWinner(normalizedEventId, pendingWinner.attendeeId);
-
       setPendingWinner(null);
       setWinnerLit(false);
       setShowConfetti(false);
-      setPendingWinner(null);
-
       setTimeout(() => {
-        setIsRedrawing(false); // unlock only after redraw starts
+        setIsRedrawing(false);
         drawWinner();
       }, 100);
     } catch (error) {
@@ -334,17 +346,15 @@ export default function RaffleDraw({
 
   const resetAll = async () => {
     if (isSpinning) return;
-
-    const confirmReset = window.confirm(
-      "Are you sure you want to reset the entire raffle? All previous winners will be deleted and put back into the pool."
-    );
-    if (!confirmReset) return;
-
+    if (
+      !window.confirm(
+        "Reset the entire raffle? All winners will be returned to the pool."
+      )
+    )
+      return;
     setIsSpinning(true);
-
     try {
       await resetRaffleWinners(normalizedEventId);
-
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setWinners([]);
       setRound(1);
@@ -355,12 +365,14 @@ export default function RaffleDraw({
       const pool = await getEligibleRaffleAttendeesV2(normalizedEventId, {
         campus: selectedCampus,
       });
-
       setAllParticipants(pool.eligible);
       setTotalParticipants(pool.totalEligible);
-
-      const participantNames = pool.eligible.map((a) => a.name).filter(Boolean);
-      setReelItems(() => generateReelChunk(participantNames, VISIBLE + 2));
+      setReelItems(
+        buildReelPool(
+          pool.eligible.map((a) => a.name).filter(Boolean),
+          VISIBLE + 2
+        )
+      );
     } catch (error) {
       console.error("Failed to reset raffle:", error);
       alert("Failed to reset the raffle. Please try again.");
@@ -369,6 +381,7 @@ export default function RaffleDraw({
     }
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────────
   return (
     <div
       ref={containerRef}
@@ -380,7 +393,6 @@ export default function RaffleDraw({
     >
       <RaffleBackground showConfetti={showConfetti} />
 
-      {/* Toolbar */}
       <div className="absolute top-5 right-5 z-30 flex gap-2">
         <button
           onClick={toggleFullscreen}
@@ -463,7 +475,6 @@ export default function RaffleDraw({
         </button>
       </div>
 
-      {/* Main content */}
       <div
         className="relative z-10 flex w-full flex-col items-center"
         style={{
@@ -541,6 +552,7 @@ export default function RaffleDraw({
           disableReset={true}
         />
       </div>
+
       {showWinners && (
         <WinnersModal winners={winners} onClose={() => setShowWinners(false)} />
       )}
@@ -560,14 +572,8 @@ export default function RaffleDraw({
           0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
           100% { transform: translateY(115vh) rotate(600deg); opacity: 0; }
         }
-        @keyframes drawPulse {
-          0%,100% { opacity: 1; }
-          50% { opacity: 0.65; }
-        }
-        @keyframes ringPulse {
-          0%,100% { opacity: 1; }
-          50% { opacity: 0.55; }
-        }
+        @keyframes drawPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
+        @keyframes ringPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
       `}</style>
     </div>
   );
