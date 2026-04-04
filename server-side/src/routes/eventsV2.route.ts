@@ -18,7 +18,6 @@ import {
   getEventStatisticsV2Controller,
   getMyEventsController,
   markAttendanceV2Controller,
-  resetEventReffleWinnersController,
   undoEventRaffleWinnerController,
 } from "../controllers/eventV2.controller";
 
@@ -128,13 +127,4 @@ router.post(
   roleAuthenticateV2(["Admin"]),
   undoEventRaffleWinnerController
 );
-
-// // POST reset winner list
-// router.post(
-//   "/raffle/:eventId/reset",
-//   requireAccessTokenWithDBCheck,
-//   roleAuthenticateV2(["Admin"]),
-//   resetEventReffleWinnersController
-// );
-
 export default router;

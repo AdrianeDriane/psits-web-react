@@ -773,49 +773,6 @@ export const undoEventRaffleWinnerController = async (
   }
 };
 
-export const resetEventRaffleWinnersController = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const claims = req.userV2;
-    if (!claims || claims.role !== "Admin") {
-      return res.status(403).json({ message: "Insufficient permissions" });
-    }
-
-    const { eventId } = req.params;
-    if (!eventId || !Types.ObjectId.isValid(eventId)) {
-      return res.status(400).json({ message: "Invalid event ID format" });
-    }
-
-    const query = buildEventLookupQuery(eventId);
-
-    if (!query) {
-      return res.status(400).json({ message: "Invalid event ID format" });
-    }
-
-    const event = await Event.findOne(query).select("attendees");
-    if (!event) {
-      return res.status(404).json({ message: "Event not found" });
-    }
-
-    // Reset every single attendee's flags
-    if (Array.isArray(event.attendees)) {
-      event.attendees.forEach((attendee: any) => {
-        attendee.raffleIsWinner = false;
-        attendee.raffleIsRemoved = false;
-      });
-
-      event.markModified("attendees");
-      await event.save();
-    }
-    return res.status(200).json({ message: "Raffle reset successfully" });
-  } catch (error) {
-    console.error("Error resetting raffle:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
 // ── Add Attendee V2 ─────────────────────────────────────────────────────
 
 // Validation constants (mirror frontend rules)
