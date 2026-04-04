@@ -584,8 +584,6 @@ type RaffleAttendeeDto = {
   year: number;
 };
 
-const raffleDrawLocks = new Set<string>();
-
 const isEligibleForRaffle = (attendee: any): boolean => {
   return (
     attendee.raffleIsWinner === false && attendee.raffleIsRemoved === false
@@ -625,10 +623,14 @@ export const getEligibleAttendeesRaffleV2Controller = async (
       return res.status(400).json({ message: "Invalid campus" });
     }
 
-    const event_id = new Types.ObjectId(eventId);
-    const event = await Event.findOne({ eventId: event_id }).select(
-      "attendees"
-    );
+    const query = buildEventLookupQuery(eventId);
+
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const event = await Event.findOne(query).select("attendees");
+
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
@@ -680,16 +682,14 @@ export const drawEventRaffleWinnerController = async (
       return res.status(400).json({ message: "Invalid event ID format" });
     }
 
-    if (raffleDrawLocks.has(eventId)) {
-      return res.status(409).json({ message: "Draw already in progress" });
+    const query = buildEventLookupQuery(eventId);
+
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
     }
 
-    raffleDrawLocks.add(eventId);
+    const event = await Event.findOne(query).select("attendees");
 
-    const event_id = new Types.ObjectId(eventId);
-    const event = await Event.findOne({ eventId: event_id }).select(
-      "attendees"
-    );
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
@@ -721,10 +721,6 @@ export const drawEventRaffleWinnerController = async (
   } catch (error) {
     console.error("Error drawing raffle winner:", error);
     return res.status(500).json({ message: "Internal server error" });
-  } finally {
-    if (eventId) {
-      raffleDrawLocks.delete(eventId);
-    }
   }
 };
 
@@ -745,10 +741,13 @@ export const undoEventRaffleWinnerController = async (
       return res.status(400).json({ message: "Invalid event ID format" });
     }
 
-    const event_id = new Types.ObjectId(eventId);
-    const event = await Event.findOne({ eventId: event_id }).select(
-      "attendees"
-    );
+    const query = buildEventLookupQuery(eventId);
+
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const event = await Event.findOne(query).select("attendees");
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
@@ -774,7 +773,7 @@ export const undoEventRaffleWinnerController = async (
   }
 };
 
-export const resetEventReffleWinnersController = async (
+export const resetEventRaffleWinnersController = async (
   req: Request,
   res: Response
 ) => {
@@ -789,10 +788,13 @@ export const resetEventReffleWinnersController = async (
       return res.status(400).json({ message: "Invalid event ID format" });
     }
 
-    const event_id = new Types.ObjectId(eventId);
-    const event = await Event.findOne({ eventId: event_id }).select(
-      "attendees"
-    );
+    const query = buildEventLookupQuery(eventId);
+
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const event = await Event.findOne(query).select("attendees");
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
