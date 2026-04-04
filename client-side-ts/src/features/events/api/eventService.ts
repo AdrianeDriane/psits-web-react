@@ -338,14 +338,6 @@ export const undoRaffleWinner = async (
   );
   return data;
 };
-export const resetRaffleWinners = async (
-  eventId: string
-): Promise<{ message: string }> => {
-  const { data } = await api.post<{ message: string }>(
-    `${backendConnection()}/api/v2/events/raffle/${eventId}/reset`
-  );
-  return data;
-};
 
 export const raffleWinner = async (
   eventId: string,
