@@ -14,7 +14,7 @@ export const WinnerDeclaredModal: React.FC<WinnerDeclaredModalProps> = ({
   round,
   onConfirm,
   onRedraw,
-  onClose,
+  onClose: _onClose,
   isRedrawing = false,
 }) => {
   return (
