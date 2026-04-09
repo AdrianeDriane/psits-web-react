@@ -1,19 +1,20 @@
 import bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 import { Request, Response } from "express";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { attendeeRegistrationMail } from "../mail_template/mail.template";
+import { Admin } from "../models/admin.model";
 import { IAttendee } from "../models/attendee.interface";
 import { IEvent } from "../models/event.interface";
-import { Admin } from "../models/admin.model";
 import { Event } from "../models/event.model";
 import { Merch } from "../models/merch.model";
 import { Student } from "../models/student.model";
-import { computeEventStatistics } from "../services/eventStatistics.service";
 import {
-  markAttendance,
-  AttendanceError,
   ATTENDANCE_ERROR_STATUS_MAP,
+  AttendanceError,
+  markAttendance,
 } from "../services/attendance.service";
+import { computeEventStatistics } from "../services/eventStatistics.service";
 
 /**
  * Returns a Date object representing the start of the day (00:00:00)
@@ -568,6 +569,206 @@ export const getEventAttendeesV2Controller = async (
     });
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// ── Event Raffle V2 ─────────────────────────────────────────────────────
+
+type RaffleAttendeeDto = {
+  attendeeId: string;
+  id_number: string;
+  name: string;
+  campus: string;
+  course: string;
+  year: number;
+};
+
+const isEligibleForRaffle = (attendee: any): boolean => {
+  return (
+    attendee.raffleIsWinner === false && attendee.raffleIsRemoved === false
+  );
+};
+
+const toRaffleAttendeeDto = (attendee: any): RaffleAttendeeDto => {
+  return {
+    attendeeId: String(attendee._id),
+    id_number: attendee.id_number,
+    name: attendee.name,
+    campus: attendee.campus,
+    course: attendee.course,
+    year: attendee.year,
+  };
+};
+
+export const getEligibleAttendeesRaffleV2Controller = async (
+  req: Request,
+  res: Response
+) => {
+  const VALID_CAMPUSES = ["UC-Main", "UC-Banilad", "UC-LM", "UC-PT"];
+
+  try {
+    const claims = req.userV2;
+    if (!claims || claims.role !== "Admin") {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+
+    const { eventId } = req.params;
+    if (!eventId || !Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const campusParam = req.query.campus as string | undefined;
+    if (campusParam && !VALID_CAMPUSES.includes(campusParam.trim())) {
+      return res.status(400).json({ message: "Invalid campus" });
+    }
+
+    const query = buildEventLookupQuery(eventId);
+
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const event = await Event.findOne(query).select("attendees");
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const attendees = Array.isArray(event.attendees) ? event.attendees : [];
+
+    const campusFilter = !campusParam
+      ? null
+      : campusParam.trim() === "UC-Main"
+        ? ["UC-Main", "UC-CS"]
+        : [campusParam.trim()];
+
+    const matchesCampus = (attendee: any) =>
+      campusFilter === null || campusFilter.includes(attendee.campus);
+
+    const eligible = attendees
+      .filter((a: any) => isEligibleForRaffle(a) && matchesCampus(a))
+      .map((a: any) => toRaffleAttendeeDto(a));
+
+    const winners = attendees
+      .filter((a: any) => a.raffleIsWinner === true)
+      .map((a: any) => toRaffleAttendeeDto(a));
+
+    return res.status(200).json({
+      eligible,
+      winners,
+      totalEligible: eligible.length,
+      ...(campusFilter && { campus: campusParam!.trim() }),
+    });
+  } catch (error) {
+    console.error("Error loading raffle pool:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const drawEventRaffleWinnerController = async (
+  req: Request,
+  res: Response
+) => {
+  const { eventId } = req.params;
+
+  try {
+    const claims = req.userV2;
+
+    if (!claims || claims.role !== "Admin") {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+
+    if (!eventId || !Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const query = buildEventLookupQuery(eventId);
+
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const event = await Event.findOne(query).select("attendees");
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const attendees = Array.isArray(event.attendees) ? event.attendees : [];
+    const eligible = attendees.filter((attendee: any) =>
+      isEligibleForRaffle(attendee)
+    );
+
+    if (eligible.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No eligible attendees left for raffle draw" });
+    }
+
+    const randomIndex = randomInt(0, eligible.length);
+    const chosen = eligible[randomIndex];
+
+    chosen.raffleIsWinner = true;
+    chosen.raffleIsRemoved = true;
+
+    event.markModified("attendees");
+    await event.save();
+
+    return res.status(200).json({
+      message: "Success",
+      winner: toRaffleAttendeeDto(chosen),
+    });
+  } catch (error) {
+    console.error("Error drawing raffle winner:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const undoEventRaffleWinnerController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const claims = req.userV2;
+
+    if (!claims || claims.role !== "Admin") {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+
+    const { eventId, attendeeId } = req.params;
+
+    if (!eventId || !Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const query = buildEventLookupQuery(eventId);
+
+    if (!query) {
+      return res.status(400).json({ message: "Invalid event ID format" });
+    }
+
+    const event = await Event.findOne(query).select("attendees");
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const attendee = event.attendees.find(
+      (item: any) => String(item._id) === attendeeId
+    );
+
+    if (!attendee) {
+      return res.status(404).json({ message: "Attendee not found" });
+    }
+
+    attendee.raffleIsWinner = false;
+    attendee.raffleIsRemoved = false;
+
+    event.markModified("attendees");
+    await event.save();
+
+    return res.status(200).json({ message: "Win undone" });
+  } catch (error) {
+    console.error("Error undoing raffle winner:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
