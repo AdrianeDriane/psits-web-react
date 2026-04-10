@@ -104,8 +104,18 @@ const router = createBrowserRouter([
                 Component: EventStatisticsPage,
               },
               {
-                path: "events/:eventId/raffle",
-                Component: EventRafflePage,
+                element: (
+                  <AdminCampusRouteGuard
+                    allowedCampuses={["UC-Main"]}
+                    campusUnauthorizedToastMessage="Unauthorized"
+                  />
+                ),
+                children: [
+                  {
+                    path: "events/:eventId/raffle",
+                    Component: EventRafflePage,
+                  },
+                ],
               },
               // TODO: Remove this sample
               // Example of a general admin page with campus-specific component
