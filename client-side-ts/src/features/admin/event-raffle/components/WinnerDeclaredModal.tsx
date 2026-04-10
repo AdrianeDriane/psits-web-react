@@ -2,6 +2,7 @@ import React from "react";
 
 interface WinnerDeclaredModalProps {
   winner: string;
+  campus?: string;
   round: number;
   onConfirm: () => void;
   onRedraw: () => void;
@@ -11,6 +12,7 @@ interface WinnerDeclaredModalProps {
 
 export const WinnerDeclaredModal: React.FC<WinnerDeclaredModalProps> = ({
   winner,
+  campus,
   round,
   onConfirm,
   onRedraw,
@@ -143,6 +145,20 @@ export const WinnerDeclaredModal: React.FC<WinnerDeclaredModalProps> = ({
         >
           {winner}
         </h2>
+
+        {campus && (
+          <p
+            style={{
+              marginTop: "-26px",
+              marginBottom: "30px",
+              color: "#475569",
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+            }}
+          >
+            Campus: {campus}
+          </p>
+        )}
 
         {/* Action Buttons */}
         <div style={{ display: "flex", gap: "12px", flexDirection: "column" }}>

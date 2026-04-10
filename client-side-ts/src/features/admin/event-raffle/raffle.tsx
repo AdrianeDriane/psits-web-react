@@ -32,13 +32,26 @@ const BRAKE_DURATION = 4000; // was 5500 — slightly snappier stop feels cleane
 
 const REEL_SIZE = WINNER_IDX + BRAKE_ITEMS + VISIBLE + 40;
 
+const CAMPUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "all", label: "All Campuses" },
+  { value: "UC-Main", label: "UC Main" },
+  { value: "UC-Banilad", label: "UC Banilad" },
+  { value: "UC-LM", label: "UC Lapu-Lapu and Mandaue" },
+  { value: "UC-PT", label: "UCPT" },
+];
+
 /** easeOutCubic: fast start, guaranteed stop at t=1 with zero velocity. */
 function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Winner = { name: string; round: number; timestamp: string };
+type Winner = {
+  name: string;
+  campus?: string;
+  round: number;
+  timestamp: string;
+};
 type PendingWinner = DrawRaffleWinnerResponse["winner"] | null;
 
 // ─── Reel generation ──────────────────────────────────────────────────────────
@@ -117,9 +130,7 @@ export default function RaffleDraw({
   const [isRedrawing, setIsRedrawing] = useState(false);
   const [winnerLit, setWinnerLit] = useState(false);
   const [pendingWinner, setPendingWinner] = useState<PendingWinner>(null);
-  const [selectedCampus, setSelectedCampus] = useState<string | undefined>(
-    undefined
-  );
+  const [selectedCampus, setSelectedCampus] = useState<string>("all");
 
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -144,14 +155,16 @@ export default function RaffleDraw({
       setIsLoadingParticipants(true);
       setLoadError(null);
       try {
+        const campusParam = selectedCampus === "all" ? undefined : selectedCampus;
         const pool = await getEligibleRaffleAttendeesV2(normalizedEventId, {
-          campus: selectedCampus,
+          campus: campusParam,
         });
         if (cancelled) return;
         setAllParticipants(pool.eligible);
         if (pool.winners?.length) {
           const historical = pool.winners.map((w, i) => ({
             name: w.name,
+            campus: w.campus,
             round: i + 1,
             timestamp: "Previously Drawn",
           }));
@@ -282,7 +295,9 @@ export default function RaffleDraw({
     const minSpinPromise = new Promise<number>((resolve) =>
       setTimeout(() => resolve(performance.now()), MIN_SPIN_TIME)
     );
-    const apiPromise = drawRaffleWinner(normalizedEventId);
+    const apiPromise = drawRaffleWinner(normalizedEventId, {
+      campus: selectedCampus === "all" ? undefined : selectedCampus,
+    });
 
     Promise.all([apiPromise, minSpinPromise])
       .then(([apiResponse, resolvedAt]) => {
@@ -302,6 +317,7 @@ export default function RaffleDraw({
       ...prev,
       {
         name: pendingWinner.name,
+        campus: pendingWinner.campus,
         round,
         timestamp: new Date().toLocaleTimeString(),
       },
@@ -359,7 +375,7 @@ export default function RaffleDraw({
       setPendingWinner(null);
       setShowConfetti(false);
       const pool = await getEligibleRaffleAttendeesV2(normalizedEventId, {
-        campus: selectedCampus,
+        campus: selectedCampus === "all" ? undefined : selectedCampus,
       });
       setAllParticipants(pool.eligible);
       setTotalParticipants(pool.totalEligible);
@@ -539,9 +555,13 @@ export default function RaffleDraw({
         </p>
 
         <RaffleControls
-          isSpinning={isSpinning || isLoadingParticipants}
+          isSpinning={isSpinning}
+          isLoadingParticipants={isLoadingParticipants}
           poolLength={allParticipants.length}
           winnersCount={winners.length}
+          selectedCampus={selectedCampus}
+          campusOptions={CAMPUS_OPTIONS}
+          onCampusChange={setSelectedCampus}
           onDraw={drawWinner}
           onReset={() => {}}
           disableReset={true}
@@ -554,6 +574,7 @@ export default function RaffleDraw({
       {pendingWinner && (
         <WinnerDeclaredModal
           winner={pendingWinner.name}
+          campus={pendingWinner.campus}
           round={round}
           onConfirm={handleConfirmWinner}
           onRedraw={handleRedraw}
