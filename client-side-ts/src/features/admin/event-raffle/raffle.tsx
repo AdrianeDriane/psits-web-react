@@ -89,16 +89,16 @@ function buildReelPool(pool: string[], length: number): string[] {
   return reel;
 }
 
-function buildFullReel(pool: string[], winner: string): string[] {
-  const reel = buildReelPool(pool, REEL_SIZE);
-  reel[WINNER_IDX] = winner;
-  return reel;
-}
+// function buildFullReel(pool: string[], winner: string): string[] {
+//   const reel = buildReelPool(pool, REEL_SIZE);
+//   reel[WINNER_IDX] = winner;
+//   return reel;
+// }
 
-/** Pixel offset at which WINNER_IDX is centered in the viewport. */
-function winnerOffset(): number {
-  return -((WINNER_IDX - CENTER_SLOT) * ITEM_HEIGHT);
-}
+// /** Pixel offset at which WINNER_IDX is centered in the viewport. */
+// function winnerOffset(): number {
+//   return -((WINNER_IDX - CENTER_SLOT) * ITEM_HEIGHT);
+// }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function RaffleDraw({
@@ -116,7 +116,7 @@ export default function RaffleDraw({
   );
   const [totalParticipants, setTotalParticipants] = useState(0);
   const [isLoadingParticipants, setIsLoadingParticipants] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [, setLoadError] = useState<string | null>(null);
 
   const [winners, setWinners] = useState<Winner[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -563,7 +563,7 @@ export default function RaffleDraw({
           campusOptions={CAMPUS_OPTIONS}
           onCampusChange={setSelectedCampus}
           onDraw={drawWinner}
-          onReset={() => {}}
+          onReset={resetAll}
           disableReset={true}
         />
       </div>
