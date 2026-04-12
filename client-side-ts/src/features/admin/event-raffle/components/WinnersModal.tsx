@@ -1,6 +1,6 @@
 import React from "react";
 
-type Winner = { name: string; round: number; timestamp: string };
+type Winner = { name: string; campus?: string; round: number; timestamp: string };
 
 interface WinnersModalProps {
   winners: Winner[];
@@ -22,29 +22,84 @@ export const WinnersModal: React.FC<WinnersModalProps> = ({ winners, onClose }) 
           background: "#ffffff", borderRadius: "20px",
           border: "1px solid #e2e8f0",
           boxShadow: "0 24px 64px rgba(0,0,0,0.15)",
-          overflow: "hidden",
+          overflow: "visible",
+          position: "relative",
+          paddingTop: "42px",
         }}
       >
-        {/* Modal header */}
+        {/* Ribbon header */}
+        <div
+          style={{
+            position: "absolute",
+            top: "-28px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "72%",
+            minWidth: "260px",
+            zIndex: 2,
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              height: "86px",
+              borderRadius: "8px",
+              background: "linear-gradient(135deg, #ffbf1f 0%, #f59e0b 65%, #f89f33 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#7c2d12",
+              fontWeight: 900,
+              fontSize: "clamp(2rem, 5vw, 3rem)",
+              letterSpacing: "-0.01em",
+              textShadow: "0 1px 0 rgba(255,255,255,0.35)",
+              clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%, 16px 50%)",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "8px",
+                background: "radial-gradient(circle at 18% -30%, rgba(255,255,255,0.42), transparent 45%)",
+                pointerEvents: "none",
+              }}
+            />
+            Winners
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          aria-label="Close winners list"
+          style={{
+            position: "absolute",
+            top: "16px",
+            right: "16px",
+            border: "none",
+            background: "transparent",
+            color: "#94a3b8",
+            fontSize: "24px",
+            lineHeight: 1,
+            padding: 0,
+            cursor: "pointer",
+            zIndex: 3,
+          }}
+        >
+          ×
+        </button>
+
         <div style={{
-          padding: "20px 24px 16px",
+          padding: "20px 24px 12px",
           borderBottom: "1px solid #f1f5f9",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          background: "linear-gradient(135deg, #2563eb, #3b82f6)",
         }}>
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: "1.05rem" }}>
-            ★ Winners List
-          </span>
-          <button onClick={onClose} style={{
-            background: "rgba(255,255,255,0.15)", border: "none",
-            color: "#fff", fontSize: "18px", lineHeight: 1,
-            cursor: "pointer", borderRadius: "6px", width: "28px", height: "28px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>×</button>
+          <p style={{ margin: 0, color: "#94a3b8", fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            Winners List
+          </p>
         </div>
 
         {/* List */}
-        <div style={{ overflowY: "auto", flex: 1, padding: "16px" }}>
+        <div className="no-scrollbar" style={{ overflowY: "auto", flex: 1, padding: "16px" }}>
           {winners.length === 0 ? (
             <div style={{ textAlign: "center", color: "#94a3b8", padding: "48px 0" }}>
               <p style={{ fontWeight: 600, margin: 0, color: "#64748b" }}>No winners yet</p>
@@ -72,7 +127,7 @@ export const WinnersModal: React.FC<WinnersModalProps> = ({ winners, onClose }) 
                       margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>{w.name}</p>
                     <p style={{ color: "#94a3b8", fontSize: "11px", margin: "2px 0 0" }}>
-                      Round {w.round} · {w.timestamp}
+                      {w.campus ? `${w.campus} · ` : ""}Round {w.round} · {w.timestamp}
                     </p>
                   </div>
                 </div>

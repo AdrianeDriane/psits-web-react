@@ -584,13 +584,40 @@ type RaffleAttendeeDto = {
   year: number;
 };
 
-const isEligibleForRaffle = (attendee: any): boolean => {
+type RaffleAttendee = IAttendee & {
+  _id: unknown;
+};
+
+const RAFFLE_VALID_CAMPUSES = [
+  "UC-Main",
+  "UC-Banilad",
+  "UC-LM",
+  "UC-PT",
+];
+
+const buildRaffleCampusFilter = (
+  campusParam: string | undefined
+): string[] | null => {
+  if (!campusParam) return null;
+
+  const normalized = campusParam.trim();
+  return [normalized];
+};
+
+const isEligibleForRaffle = (
+  attendee: Pick<RaffleAttendee, "raffleIsWinner" | "raffleIsRemoved">
+): boolean => {
   return (
     attendee.raffleIsWinner === false && attendee.raffleIsRemoved === false
   );
 };
 
-const toRaffleAttendeeDto = (attendee: any): RaffleAttendeeDto => {
+const toRaffleAttendeeDto = (
+  attendee: Pick<
+    RaffleAttendee,
+    "_id" | "id_number" | "name" | "campus" | "course" | "year"
+  >
+): RaffleAttendeeDto => {
   return {
     attendeeId: String(attendee._id),
     id_number: attendee.id_number,
@@ -605,12 +632,15 @@ export const getEligibleAttendeesRaffleV2Controller = async (
   req: Request,
   res: Response
 ) => {
-  const VALID_CAMPUSES = ["UC-Main", "UC-Banilad", "UC-LM", "UC-PT"];
-
   try {
     const claims = req.userV2;
     if (!claims || claims.role !== "Admin") {
       return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    if (claims.campus !== "UC-Main") {
+      return res
+        .status(403)
+        .json({ message: "Only UC-Main admins can access raffle controls" });
     }
 
     const { eventId } = req.params;
@@ -619,7 +649,7 @@ export const getEligibleAttendeesRaffleV2Controller = async (
     }
 
     const campusParam = req.query.campus as string | undefined;
-    if (campusParam && !VALID_CAMPUSES.includes(campusParam.trim())) {
+    if (campusParam && !RAFFLE_VALID_CAMPUSES.includes(campusParam.trim())) {
       return res.status(400).json({ message: "Invalid campus" });
     }
 
@@ -635,24 +665,27 @@ export const getEligibleAttendeesRaffleV2Controller = async (
       return res.status(404).json({ message: "Event not found" });
     }
 
-    const attendees = Array.isArray(event.attendees) ? event.attendees : [];
+    const attendees: RaffleAttendee[] = Array.isArray(event.attendees)
+      ? (event.attendees as unknown as RaffleAttendee[])
+      : [];
 
-    const campusFilter = !campusParam
-      ? null
-      : campusParam.trim() === "UC-Main"
-        ? ["UC-Main", "UC-CS"]
-        : [campusParam.trim()];
+    const campusFilter = buildRaffleCampusFilter(campusParam);
 
-    const matchesCampus = (attendee: any) =>
-      campusFilter === null || campusFilter.includes(attendee.campus);
+    const matchesCampus = (attendee: Pick<RaffleAttendee, "campus">) => {
+      if (!RAFFLE_VALID_CAMPUSES.includes(attendee.campus)) {
+        return false;
+      }
+
+      return campusFilter === null || campusFilter.includes(attendee.campus);
+    };
 
     const eligible = attendees
-      .filter((a: any) => isEligibleForRaffle(a) && matchesCampus(a))
-      .map((a: any) => toRaffleAttendeeDto(a));
+      .filter((a) => isEligibleForRaffle(a) && matchesCampus(a))
+      .map((a) => toRaffleAttendeeDto(a));
 
     const winners = attendees
-      .filter((a: any) => a.raffleIsWinner === true)
-      .map((a: any) => toRaffleAttendeeDto(a));
+      .filter((a) => a.raffleIsWinner === true && matchesCampus(a))
+      .map((a) => toRaffleAttendeeDto(a));
 
     return res.status(200).json({
       eligible,
@@ -677,6 +710,11 @@ export const drawEventRaffleWinnerController = async (
     if (!claims || claims.role !== "Admin") {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
+    if (claims.campus !== "UC-Main") {
+      return res
+        .status(403)
+        .json({ message: "Only UC-Main admins can access raffle controls" });
+    }
 
     if (!eventId || !Types.ObjectId.isValid(eventId)) {
       return res.status(400).json({ message: "Invalid event ID format" });
@@ -688,15 +726,26 @@ export const drawEventRaffleWinnerController = async (
       return res.status(400).json({ message: "Invalid event ID format" });
     }
 
+    const campusParam = req.query.campus as string | undefined;
+    if (campusParam && !RAFFLE_VALID_CAMPUSES.includes(campusParam.trim())) {
+      return res.status(400).json({ message: "Invalid campus" });
+    }
+
     const event = await Event.findOne(query).select("attendees");
 
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    const attendees = Array.isArray(event.attendees) ? event.attendees : [];
-    const eligible = attendees.filter((attendee: any) =>
-      isEligibleForRaffle(attendee)
+    const attendees: RaffleAttendee[] = Array.isArray(event.attendees)
+      ? (event.attendees as unknown as RaffleAttendee[])
+      : [];
+    const campusFilter = buildRaffleCampusFilter(campusParam);
+
+    const eligible = attendees.filter((attendee) =>
+      isEligibleForRaffle(attendee) &&
+      RAFFLE_VALID_CAMPUSES.includes(attendee.campus) &&
+      (campusFilter === null || campusFilter.includes(attendee.campus))
     );
 
     if (eligible.length === 0) {
@@ -734,6 +783,11 @@ export const undoEventRaffleWinnerController = async (
     if (!claims || claims.role !== "Admin") {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
+    if (claims.campus !== "UC-Main") {
+      return res
+        .status(403)
+        .json({ message: "Only UC-Main admins can access raffle controls" });
+    }
 
     const { eventId, attendeeId } = req.params;
 
@@ -752,9 +806,11 @@ export const undoEventRaffleWinnerController = async (
       return res.status(404).json({ message: "Event not found" });
     }
 
-    const attendee = event.attendees.find(
-      (item: any) => String(item._id) === attendeeId
-    );
+    const attendees: RaffleAttendee[] = Array.isArray(event.attendees)
+      ? (event.attendees as unknown as RaffleAttendee[])
+      : [];
+
+    const attendee = attendees.find((item) => String(item._id) === attendeeId);
 
     if (!attendee) {
       return res.status(404).json({ message: "Attendee not found" });

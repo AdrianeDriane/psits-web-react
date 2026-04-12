@@ -321,10 +321,13 @@ export const getEligibleRaffleAttendeesV2 = async (
 };
 
 export const drawRaffleWinner = async (
-  eventId: string
+  eventId: string,
+  params?: RaffleQueryParams
 ): Promise<DrawRaffleWinnerResponse> => {
   const { data } = await api.post<DrawRaffleWinnerResponse>(
-    `${backendConnection()}/api/v2/events/raffle/${eventId}/draw`
+    `${backendConnection()}/api/v2/events/raffle/${eventId}/draw`,
+    undefined,
+    { params }
   );
   return data;
 };
