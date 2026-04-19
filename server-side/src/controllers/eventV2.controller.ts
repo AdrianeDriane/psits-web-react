@@ -588,12 +588,14 @@ type RaffleAttendee = IAttendee & {
   _id: unknown;
 };
 
-const RAFFLE_VALID_CAMPUSES = [
+const RAFFLE_FILTERABLE_CAMPUSES = [
   "UC-Main",
   "UC-Banilad",
   "UC-LM",
   "UC-PT",
 ];
+
+const RAFFLE_ELIGIBLE_CAMPUSES = [...RAFFLE_FILTERABLE_CAMPUSES, "UC-CS"];
 
 const buildRaffleCampusFilter = (
   campusParam: string | undefined
@@ -601,6 +603,10 @@ const buildRaffleCampusFilter = (
   if (!campusParam) return null;
 
   const normalized = campusParam.trim();
+  if (normalized === "UC-Main") {
+    return ["UC-Main", "UC-CS"];
+  }
+
   return [normalized];
 };
 
@@ -649,7 +655,10 @@ export const getEligibleAttendeesRaffleV2Controller = async (
     }
 
     const campusParam = req.query.campus as string | undefined;
-    if (campusParam && !RAFFLE_VALID_CAMPUSES.includes(campusParam.trim())) {
+    if (
+      campusParam &&
+      !RAFFLE_FILTERABLE_CAMPUSES.includes(campusParam.trim())
+    ) {
       return res.status(400).json({ message: "Invalid campus" });
     }
 
@@ -672,7 +681,7 @@ export const getEligibleAttendeesRaffleV2Controller = async (
     const campusFilter = buildRaffleCampusFilter(campusParam);
 
     const matchesCampus = (attendee: Pick<RaffleAttendee, "campus">) => {
-      if (!RAFFLE_VALID_CAMPUSES.includes(attendee.campus)) {
+      if (!RAFFLE_ELIGIBLE_CAMPUSES.includes(attendee.campus)) {
         return false;
       }
 
@@ -727,7 +736,10 @@ export const drawEventRaffleWinnerController = async (
     }
 
     const campusParam = req.query.campus as string | undefined;
-    if (campusParam && !RAFFLE_VALID_CAMPUSES.includes(campusParam.trim())) {
+    if (
+      campusParam &&
+      !RAFFLE_FILTERABLE_CAMPUSES.includes(campusParam.trim())
+    ) {
       return res.status(400).json({ message: "Invalid campus" });
     }
 
@@ -744,7 +756,7 @@ export const drawEventRaffleWinnerController = async (
 
     const eligible = attendees.filter((attendee) =>
       isEligibleForRaffle(attendee) &&
-      RAFFLE_VALID_CAMPUSES.includes(attendee.campus) &&
+      RAFFLE_ELIGIBLE_CAMPUSES.includes(attendee.campus) &&
       (campusFilter === null || campusFilter.includes(attendee.campus))
     );
 
